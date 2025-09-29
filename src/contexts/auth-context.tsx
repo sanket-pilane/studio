@@ -34,13 +34,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUserProfile = useCallback(async (firebaseUser: User) => {
+  const fetchUserProfileCallback = useCallback(async (firebaseUser: User | null) => {
+    if (!firebaseUser) {
+        setUserProfile(null);
+        return;
+    }
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
     if(userDoc.exists()){
         setUserProfile(userDoc.data() as UserProfile);
-    } else {
-        const defaultProfile = { fullName: firebaseUser.displayName || 'New User', vehicle: '' };
+    } else if (firebaseUser.displayName || firebaseUser.email) {
+        const defaultProfile = { 
+            fullName: firebaseUser.displayName || firebaseUser.email!.split('@')[0], 
+            vehicle: '' 
+        };
         await setDoc(userDocRef, defaultProfile);
         setUserProfile(defaultProfile);
     }
@@ -48,9 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       if (user) {
         setUser(user);
-        await fetchUserProfile(user);
+        await fetchUserProfileCallback(user);
         const token = await user.getIdTokenResult();
         setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
       } else {
@@ -62,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [fetchUserProfile]);
+  }, [fetchUserProfileCallback]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
@@ -75,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fullName: fullName,
         vehicle: ''
     });
+    await fetchUserProfileCallback(user);
   };
 
   const logout = async () => {
@@ -86,21 +95,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
         const userDocRef = doc(db, 'users', user.uid);
         await setDoc(userDocRef, data, { merge: true });
-        await fetchUserProfile(user);
+        await fetchUserProfileCallback(user);
     }
   };
 
-  const value = { user, userProfile, isAdmin, loading, login, signup, logout, fetchUserProfile: () => user ? fetchUserProfile(user) : Promise.resolve(), updateUserProfile };
+  const value = { 
+      user, 
+      userProfile, 
+      isAdmin, 
+      loading, 
+      login, 
+      signup, 
+      logout, 
+      fetchUserProfile: () => fetchUserProfileCallback(user), 
+      updateUserProfile 
+    };
 
-  if (loading) {
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-    );
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+        {loading ? (
+             <div className="flex items-center justify-center h-screen">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
