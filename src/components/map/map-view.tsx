@@ -1,23 +1,41 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   APIProvider,
   Map,
   AdvancedMarker,
   Pin,
 } from '@vis.gl/react-google-maps';
-import { stations } from '@/lib/data';
+import { getStations } from '@/ai/flows/station-management-flow';
 import type { Station } from '@/lib/types';
 import StationDetailSheet from './station-detail-sheet';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
 export default function MapView() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStations() {
+        try {
+            const stationsData = await getStations();
+            setStations(stationsData);
+        } catch (error) {
+            console.error("Failed to fetch stations:", error);
+            // Optionally show a toast or error message to the user
+        } finally {
+            setLoading(false);
+        }
+    }
+    fetchStations();
+  }, []);
 
   if (!apiKey) {
     return (
@@ -34,7 +52,7 @@ export default function MapView() {
   }
 
   return (
-    <div className="h-full w-full rounded-lg overflow-hidden shadow-lg">
+    <div className="h-full w-full rounded-lg overflow-hidden shadow-lg relative">
       <APIProvider apiKey={apiKey}>
         <Map
           defaultCenter={PUNE_CENTER}
@@ -43,7 +61,7 @@ export default function MapView() {
           gestureHandling={'greedy'}
           disableDefaultUI={true}
         >
-          {stations.map((station) => (
+          {!loading && stations.map((station) => (
             <AdvancedMarker
               key={station.id}
               position={station.coordinates}
@@ -59,6 +77,12 @@ export default function MapView() {
         </Map>
       </APIProvider>
       
+      {loading && (
+        <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
+
       <StationDetailSheet 
         station={selectedStation} 
         onOpenChange={(isOpen) => {

@@ -1,3 +1,4 @@
+
 // station-recommendation-tool.ts
 'use server';
 
@@ -11,6 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getStations } from './station-management-flow';
 
 const StationRecommendationInputSchema = z.object({
   latitude: z
@@ -49,14 +51,19 @@ export async function getStationRecommendation(
 const stationRecommendationPrompt = ai.definePrompt({
   name: 'stationRecommendationPrompt',
   input: {
-    schema: StationRecommendationInputSchema,
+    schema: z.object({
+      ...StationRecommendationInputSchema.shape,
+      stations: z.string().describe("JSON string of available stations.")
+    }),
   },
   output: {
     schema: StationRecommendationOutputSchema,
   },
   prompt: `Based on the user's location (latitude: {{{latitude}}}, longitude: {{{longitude}}}),
 the time they want to charge ({{{time}}}), and their connector type ({{{connectorType}}}),
-recommend the best EV charging station for them.
+recommend the best EV charging station for them from the following list of available stations:
+
+{{{stations}}}
 
 Consider historical booking trends and real-time availability data.
 Explain your reasoning for recommending this station.
@@ -71,7 +78,16 @@ const stationRecommendationFlow = ai.defineFlow(
     outputSchema: StationRecommendationOutputSchema,
   },
   async input => {
-    const {output} = await stationRecommendationPrompt(input);
+    const stations = await getStations();
+    const stationsJson = JSON.stringify(stations.map(s => ({
+        name: s.name,
+        availableChargers: s.availableChargers,
+        totalChargers: s.totalChargers,
+        connectors: s.connectors.map(c => c.type),
+        rating: s.rating
+    })));
+
+    const {output} = await stationRecommendationPrompt({ ...input, stations: stationsJson });
     return output!;
   }
 );
