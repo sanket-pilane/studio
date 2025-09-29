@@ -22,8 +22,8 @@ import { Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
-  const [email, setEmail] = useState('alex.doe@example.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -50,7 +50,8 @@ export default function LoginPage() {
             </div>
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email below to login to your account. <br/>
+            Admin: admin@example.com / password
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -3,9 +3,8 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { getAuth, onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -41,19 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, pass: string) => {
-    const authInstance = getAuth();
-    await signInWithEmailAndPassword(authInstance, email, pass);
+    await signInWithEmailAndPassword(auth, email, pass);
     if(email === 'admin@example.com') {
       router.push('/dashboard');
     } else {
-      router.push('/profile');
+      router.push('/');
     }
   };
 
   const signup = async (email: string, pass: string) => {
-    const authInstance = getAuth();
-    await createUserWithEmailAndPassword(authInstance, email, pass);
-    router.push('/profile');
+    await createUserWithEmailAndPassword(auth, email, pass);
+    router.push('/');
   };
 
   const logout = async () => {
@@ -72,14 +69,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/login');
       }
       if (user && isPublicRoute) {
-        router.push('/');
+        if(isAdmin){
+          router.push('/dashboard');
+        } else {
+          router.push('/');
+        }
       }
     }
-  }, [user, loading, isPublicRoute, router]);
+  }, [user, loading, isPublicRoute, router, isAdmin]);
 
-  if (loading || (!user && !isPublicRoute) || (user && isPublicRoute)) {
-    return null; // Or a loading spinner
+  // This prevents a flash of the login page if the user is already logged in.
+  if (loading || (!user && !isPublicRoute)) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            {/* You can replace this with a more sophisticated loader component */}
+            <p>Loading...</p>
+        </div>
+    );
   }
+  
+  // This prevents a flash of the public page if the user is logged in.
+  if (user && isPublicRoute) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+            <p>Redirecting...</p>
+        </div>
+    );
+  }
+
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
