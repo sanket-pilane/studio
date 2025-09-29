@@ -30,6 +30,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack(config, { isServer, dev }) {
+    if (dev) {
+        // Ignore watching ai folder to avoid reloads on genkit changes
+        config.watchOptions.ignored = /src[\\/]ai[\\/]/;
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
