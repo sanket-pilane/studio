@@ -1,18 +1,24 @@
+
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useAuth } from "@/contexts/auth-context"
 import { bookings } from "@/lib/data"
 import { cn } from "@/lib/utils"
 import { CreditCard, MapPin, User, Car } from "lucide-react"
 
 export default function ProfilePage() {
-  const user = {
-    name: "Alex Doe",
-    email: "alex.doe@example.com",
-    initials: "AD",
-    avatarUrl: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
+  const { user } = useAuth();
+  
+  const profile = {
+    name: user?.displayName || "Alex Doe",
+    email: user?.email || "alex.doe@example.com",
+    initials: user?.displayName?.charAt(0) || "AD",
+    avatarUrl: user?.photoURL || `https://i.pravatar.cc/150?u=${user?.email}`,
     vehicle: "Tesla Model Y",
   }
 
@@ -24,16 +30,16 @@ export default function ProfilePage() {
           <Card>
             <CardHeader className="flex flex-col items-center text-center">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                <AvatarFallback>{user.initials}</AvatarFallback>
+                <AvatarImage src={profile.avatarUrl} alt={profile.name} />
+                <AvatarFallback>{profile.initials}</AvatarFallback>
               </Avatar>
-              <CardTitle className="text-2xl">{user.name}</CardTitle>
-              <CardDescription>{user.email}</CardDescription>
+              <CardTitle className="text-2xl">{profile.name}</CardTitle>
+              <CardDescription>{profile.email}</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-4">
                <div className="flex items-center">
                 <Car className="mr-3 h-5 w-5" />
-                <span>Vehicle: <strong>{user.vehicle}</strong></span>
+                <span>Vehicle: <strong>{profile.vehicle}</strong></span>
               </div>
               <div className="flex items-center">
                 <CreditCard className="mr-3 h-5 w-5" />

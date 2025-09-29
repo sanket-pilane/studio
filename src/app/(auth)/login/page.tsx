@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState } from 'react';
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -14,13 +16,29 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Logo from "@/components/icons/logo"
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('alex.doe@example.com');
+  const [password, setPassword] = useState('password');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login();
+    setLoading(true);
+    try {
+      await login(email, password);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: error.message,
+      });
+      setLoading(false);
+    }
   }
 
   return (
@@ -45,7 +63,8 @@ export default function LoginPage() {
                   type="email"
                   placeholder="m@example.com"
                   required
-                  defaultValue="alex.doe@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-2">
@@ -58,10 +77,16 @@ export default function LoginPage() {
                     Forgot your password?
                   </Link>
                 </div>
-                <Input id="password" type="password" required defaultValue="password" />
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin"/> : 'Login'}
               </Button>
               <Button variant="outline" className="w-full">
                 Login with Google

@@ -1,3 +1,5 @@
+
+'use client';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,8 +13,24 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
+    const { isAdmin, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && !isAdmin) {
+            router.push('/');
+        }
+    }, [isAdmin, loading, router]);
+    
+    if (loading || !isAdmin) {
+        return <div className="container mx-auto p-4 md:p-8">Checking permissions...</div>;
+    }
+
     const totalAvailability = stations.reduce((acc, station) => acc + station.availableChargers, 0);
     const totalChargers = stations.reduce((acc, station) => acc + station.totalChargers, 0);
     const availabilityPercentage = totalChargers > 0 ? (totalAvailability / totalChargers * 100).toFixed(0) : 0;
@@ -126,3 +144,4 @@ export default function DashboardPage() {
     </div>
   )
 }
+

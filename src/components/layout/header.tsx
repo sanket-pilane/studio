@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,19 +15,19 @@ import { cn } from '@/lib/utils';
 import Logo from '../icons/logo';
 import { useAuth } from '@/contexts/auth-context';
 
-const navLinks = [
-  { href: '/', label: 'Map' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/profile', label: 'Profile' },
-];
-
 export default function Header() {
   const pathname = usePathname();
-  const { isLoggedIn, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
+
+  const navLinks = [
+    { href: '/', label: 'Map', show: true },
+    { href: '/dashboard', label: 'Dashboard', show: isAdmin },
+    { href: '/profile', label: 'Profile', show: !!user },
+  ];
 
   const NavLinks = ({ className }: { className?: string }) => (
     <nav className={cn('flex items-center gap-4 lg:gap-6', className)}>
-      {navLinks.map(({ href, label }) => (
+      {navLinks.filter(l => l.show).map(({ href, label }) => (
         <Link
           key={href}
           href={href}
@@ -54,7 +55,7 @@ export default function Header() {
           <NavLinks className="hidden md:flex" />
         </div>
         <div className="flex items-center gap-2">
-          {isLoggedIn ? (
+          {user ? (
             <Button variant="outline" size="sm" onClick={logout}>
               Logout
             </Button>
