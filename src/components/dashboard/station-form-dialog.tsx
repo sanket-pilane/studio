@@ -34,7 +34,10 @@ type StationFormDialogProps = {
 };
 
 // Create a schema for the form, omitting the id as it's not edited in the form
-const formSchema = StationSchema.omit({ id: true });
+const formSchema = StationSchema.omit({ id: true }).refine(data => data.availableChargers <= data.totalChargers, {
+    message: 'Available chargers cannot exceed total chargers.',
+    path: ['availableChargers'],
+});
 type StationFormData = z.infer<typeof formSchema>;
 
 export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved, station }: StationFormDialogProps) {

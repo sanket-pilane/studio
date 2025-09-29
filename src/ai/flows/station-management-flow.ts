@@ -13,7 +13,7 @@ import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, D
 import { z } from 'genkit';
 import { app } from '@/lib/firebase';
 import type { Station } from '@/lib/types';
-import { ConnectorSchema, StationSchema } from '@/lib/zod-schemas';
+import { RefinedStationSchema } from '@/lib/zod-schemas';
 
 
 const db = getFirestore(app);
@@ -41,13 +41,13 @@ export async function getStations(): Promise<Station[]> {
 
 
 export async function createStation(stationData: Omit<Station, 'id'>): Promise<{ id: string }> {
-    const validatedData = StationSchema.omit({id: true}).parse(stationData);
+    const validatedData = RefinedStationSchema.omit({id: true}).parse(stationData);
     const docRef = await addDoc(stationsCollection, validatedData);
     return { id: docRef.id };
 }
 
 export async function updateStation(stationId: string, stationData: Partial<Omit<Station, 'id'>>): Promise<{ id: string }> {
-    const validatedData = StationSchema.omit({id: true}).partial().parse(stationData);
+    const validatedData = RefinedStationSchema.omit({id: true}).partial().parse(stationData);
     const stationRef = doc(db, 'stations', stationId);
     await updateDoc(stationRef, validatedData);
     return { id: stationId };

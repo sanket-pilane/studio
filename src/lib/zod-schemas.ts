@@ -6,6 +6,7 @@ export const ConnectorSchema = z.object({
   speed: z.number().positive(),
 });
 
+// Base schema for the form
 export const StationSchema = z.object({
   id: z.string(),
   name: z.string().min(3, 'Name must be at least 3 characters.'),
@@ -19,7 +20,10 @@ export const StationSchema = z.object({
   totalChargers: z.number().int().min(1, 'Total chargers must be at least 1.'),
   availableChargers: z.number().int().nonnegative(),
   rating: z.number().min(0).max(5),
-}).refine(data => data.availableChargers <= data.totalChargers, {
+});
+
+// Refined schema for validation
+export const RefinedStationSchema = StationSchema.refine(data => data.availableChargers <= data.totalChargers, {
     message: 'Available chargers cannot exceed total chargers.',
     path: ['availableChargers'],
 });
