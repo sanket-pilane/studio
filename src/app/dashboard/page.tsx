@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { stations } from "@/lib/data"
-import { MoreHorizontal, PlusCircle, ArrowUpRight, Activity, Users, DollarSign } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Loader2, Activity, Users, DollarSign } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -34,7 +34,11 @@ export default function DashboardPage() {
     }, [isAdmin, loading, router]);
     
     if (loading || !isAdmin) {
-        return <div className="container mx-auto p-4 md:p-8">Checking permissions...</div>;
+        return (
+          <div className="flex items-center justify-center h-screen">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        );
     }
 
     const totalAvailability = stations.reduce((acc, station) => acc + station.availableChargers, 0);

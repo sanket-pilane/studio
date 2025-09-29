@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -33,60 +33,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
-  const fetchUserProfile = useCallback(async (firebaseUser: User | null = auth.currentUser) => {
-    if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-        if(userDoc.exists()){
-            setUserProfile(userDoc.data() as UserProfile);
-        } else {
-            // Create a default profile if it doesn't exist
-            const defaultProfile = { fullName: firebaseUser.displayName || 'New User', vehicle: '' };
-            await setDoc(userDocRef, defaultProfile);
-            setUserProfile(defaultProfile);
-        }
+  const fetchUserProfile = useCallback(async (firebaseUser: User) => {
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    if(userDoc.exists()){
+        setUserProfile(userDoc.data() as UserProfile);
+    } else {
+        const defaultProfile = { fullName: firebaseUser.displayName || 'New User', vehicle: '' };
+        await setDoc(userDocRef, defaultProfile);
+        setUserProfile(defaultProfile);
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
-      setUser(user);
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data() as UserProfile);
-        }
-
+        setUser(user);
+        await fetchUserProfile(user);
         const token = await user.getIdTokenResult();
-        const isAdminUser = !!token.claims.admin || user.email === 'admin@example.com';
-        setIsAdmin(isAdminUser);
-        
-        const publicRoutes = ['/login', '/signup'];
-        if(publicRoutes.includes(pathname)){
-          router.push(isAdminUser ? '/dashboard' : '/');
-        }
-
+        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
       } else {
-        setIsAdmin(false);
+        setUser(null);
         setUserProfile(null);
-        const publicRoutes = ['/login', '/signup'];
-        if (!publicRoutes.includes(pathname)) {
-            router.push('/login');
-        }
+        setIsAdmin(false);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [pathname, router]);
+  }, [fetchUserProfile]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
-    // onAuthStateChanged will handle the redirect
   };
 
   const signup = async (email: string, pass: string, fullName: string) => {
@@ -96,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fullName: fullName,
         vehicle: ''
     });
-    // onAuthStateChanged will handle the redirect
   };
 
   const logout = async () => {
@@ -108,11 +86,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
         const userDocRef = doc(db, 'users', user.uid);
         await setDoc(userDocRef, data, { merge: true });
-        await fetchUserProfile();
+        await fetchUserProfile(user);
     }
   };
 
-  const value = { user, userProfile, isAdmin, loading, login, signup, logout, fetchUserProfile, updateUserProfile };
+  const value = { user, userProfile, isAdmin, loading, login, signup, logout, fetchUserProfile: () => user ? fetchUserProfile(user) : Promise.resolve(), updateUserProfile };
 
   if (loading) {
     return (
