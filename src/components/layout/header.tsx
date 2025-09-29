@@ -17,7 +17,7 @@ import { useAuth } from '@/contexts/auth-context';
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, logout, loading } = useAuth();
 
   const navLinks = [
     { href: '/', label: 'Map', show: true },
@@ -52,21 +52,25 @@ export default function Header() {
           </span>
         </Link>
         <div className="flex-1">
-          <NavLinks className="hidden md:flex" />
+           {!loading && <NavLinks className="hidden md:flex" />}
         </div>
         <div className="flex items-center gap-2">
-          {user ? (
-            <Button variant="outline" size="sm" onClick={logout}>
-              Logout
-            </Button>
-          ) : (
+          {!loading && (
             <>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+              {user ? (
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Logout
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/login">Login</Link>
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </>
           )}
           <div className="md:hidden">
@@ -82,7 +86,7 @@ export default function Header() {
                     <Logo className="h-6 w-6 text-primary" />
                     <span className="font-bold">ChargeSpot Navigator</span>
                 </Link>
-                <NavLinks className="flex-col items-start gap-4" />
+                {!loading && <NavLinks className="flex-col items-start gap-4" />}
               </SheetContent>
             </Sheet>
           </div>
