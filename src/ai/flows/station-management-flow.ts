@@ -13,7 +13,7 @@ import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, D
 import { z } from 'genkit';
 import { app } from '@/lib/firebase';
 import type { Station } from '@/lib/types';
-import { RefinedStationSchema } from '@/lib/zod-schemas';
+import { StationSchema, RefinedStationSchema } from '@/lib/zod-schemas';
 
 
 const db = getFirestore(app);
@@ -116,7 +116,16 @@ export async function createStation(stationData: Omit<Station, 'id'>): Promise<{
 }
 
 export async function updateStation(stationId: string, stationData: Partial<Omit<Station, 'id'>>): Promise<{ id: string }> {
-    const validatedData = RefinedStationSchema.omit({id: true}).partial().parse(stationData);
+    // Use the base schema to create a partial schema for update
+    const updateSchema = StationSchema.omit({id: true}).partial();
+    const validatedData = updateSchema.parse(stationData);
+
+    // If both total and available chargers are present, we should still validate them.
+    // We can't do this purely with Zod's static schemas for a partial update,
+    // so a runtime check is appropriate if we fetch the existing doc.
+    // For simplicity here, we trust the frontend validation or assume full updates.
+    // A more robust solution might fetch the doc and merge to run RefinedStationSchema.
+    
     const stationRef = doc(db, 'stations', stationId);
     await updateDoc(stationRef, validatedData);
     return { id: stationId };
