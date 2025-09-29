@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "station-image-1",
+      "description": "A modern EV charging station at night.",
+      "imageUrl": "https://images.unsplash.com/photo-1707758283398-7df21adba23a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjaGFyZ2luZyUyMHN0YXRpb258ZW58MHx8fHwxNzU5MTM5NzE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "charging station"
+    }
+  ]
 }
