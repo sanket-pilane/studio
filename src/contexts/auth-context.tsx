@@ -52,35 +52,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       setUser(user);
       if (user) {
-        // Fetch profile first
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
-        if(userDoc.exists()){
-            setUserProfile(userDoc.data() as UserProfile);
+        if (userDoc.exists()) {
+          setUserProfile(userDoc.data() as UserProfile);
         }
-        
-        // Then check for admin claims
+
         const token = await user.getIdTokenResult();
-        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
+        const isAdminUser = !!token.claims.admin || user.email === 'admin@example.com';
+        setIsAdmin(isAdminUser);
+        
+        const publicRoutes = ['/login', '/signup'];
+        if(publicRoutes.includes(pathname)){
+          router.push(isAdminUser ? '/dashboard' : '/');
+        }
+
       } else {
         setIsAdmin(false);
         setUserProfile(null);
+        const publicRoutes = ['/login', '/signup'];
+        if (!publicRoutes.includes(pathname)) {
+            router.push('/login');
+        }
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [pathname, router]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
-    if(email === 'admin@example.com') {
-      router.push('/dashboard');
-    } else {
-      router.push('/');
-    }
+    // onAuthStateChanged will handle the redirect
   };
 
   const signup = async (email: string, pass: string, fullName: string) => {
@@ -90,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fullName: fullName,
         vehicle: ''
     });
-    router.push('/');
+    // onAuthStateChanged will handle the redirect
   };
 
   const logout = async () => {
@@ -108,26 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, userProfile, isAdmin, loading, login, signup, logout, fetchUserProfile, updateUserProfile };
 
-  const publicRoutes = ['/login', '/signup'];
-  const isPublicRoute = publicRoutes.includes(pathname);
-
-  useEffect(() => {
-    if (!loading && !user && !isPublicRoute) {
-      router.push('/login');
-    }
-  }, [user, loading, isPublicRoute, router]);
-
   if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
-  }
-
-  // Prevent flashing content
-  if (!user && !isPublicRoute) {
-      return null;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
