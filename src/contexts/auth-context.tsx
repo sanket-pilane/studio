@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
     fullName: string;
@@ -20,7 +21,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<void>;
   signup: (email: string, pass: string, fullName: string) => Promise<void>;
   logout: () => void;
-  fetchUserProfile: () => void;
+  fetchUserProfile: () => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -53,10 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        await fetchUserProfile(user);
+        // Fetch profile first
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if(userDoc.exists()){
+            setUserProfile(userDoc.data() as UserProfile);
+        }
+        
+        // Then check for admin claims
         const token = await user.getIdTokenResult();
         setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
-
       } else {
         setIsAdmin(false);
         setUserProfile(null);
@@ -65,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [fetchUserProfile]);
+  }, []);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
@@ -105,19 +112,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user && !isPublicRoute) {
-        router.push('/login');
-      }
+    if (!loading && !user && !isPublicRoute) {
+      router.push('/login');
     }
-  }, [user, loading, isPublicRoute, router, isAdmin, pathname]);
+  }, [user, loading, isPublicRoute, router]);
 
   if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
-            <p>Loading...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
+  }
+
+  // Prevent flashing content
+  if (!user && !isPublicRoute) {
+      return null;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
