@@ -31,16 +31,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    turbo: {
-      rules: {
-        'src/ai/**/*': {
-          loaders: ['@genkit-ai/next/loader'],
-          as: '*.ts',
-        },
-      },
-    },
-  },
 };
 
 export default nextConfig;
