@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,13 +16,11 @@ import { Label } from "@/components/ui/label"
 import Logo from "@/components/icons/logo"
 
 export default function LoginPage() {
-  const router = useRouter();
+  const { login } = useAuth();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd have authentication logic here.
-    // For this prototype, we'll just navigate to the profile page.
-    router.push('/profile');
+    login();
   }
 
   return (

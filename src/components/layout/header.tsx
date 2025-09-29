@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Zap } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import Logo from '../icons/logo';
+import { useAuth } from '@/contexts/auth-context';
 
 const navLinks = [
   { href: '/', label: 'Map' },
@@ -21,6 +22,7 @@ const navLinks = [
 
 export default function Header() {
   const pathname = usePathname();
+  const { isLoggedIn, logout } = useAuth();
 
   const NavLinks = ({ className }: { className?: string }) => (
     <nav className={cn('flex items-center gap-4 lg:gap-6', className)}>
@@ -52,12 +54,20 @@ export default function Header() {
           <NavLinks className="hidden md:flex" />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/signup">Sign Up</Link>
-          </Button>
+          {isLoggedIn ? (
+            <Button variant="outline" size="sm" onClick={logout}>
+              Logout
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/signup">Sign Up</Link>
+              </Button>
+            </>
+          )}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>

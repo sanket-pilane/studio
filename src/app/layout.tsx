@@ -3,6 +3,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/layout/header';
+import { AuthProvider } from '@/contexts/auth-context';
 
 export const metadata: Metadata = {
   title: 'ChargeSpot Navigator',
@@ -25,9 +26,11 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Toaster />
+        <AuthProvider>
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );
