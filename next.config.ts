@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -30,12 +31,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack(config, { isServer, dev }) {
-    if (dev) {
-        // Ignore watching ai folder to avoid reloads on genkit changes
-        config.watchOptions.ignored = /src[\\/]ai[\\/]/;
-    }
-    return config;
+  experimental: {
+    turbo: {
+      rules: {
+        'src/ai/**/*': {
+          loaders: ['@genkit-ai/next/loader'],
+          as: '*.ts',
+        },
+      },
+    },
   },
 };
 
