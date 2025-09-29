@@ -16,15 +16,21 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
-let resolveInitialization: (value: unknown) => void;
-const initializationPromise = new Promise((resolve) => {
+let resolveInitialization: (value: boolean) => void;
+const initializationPromise = new Promise<boolean>((resolve) => {
     resolveInitialization = resolve;
 });
 
 async function initializeFirebase() {
-    if (app) return { app, auth, db };
+    if (getApps().length) {
+        app = getApp();
+        auth = getAuth(app);
+        db = getFirestore(app);
+        resolveInitialization(true);
+        return;
+    }
 
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
 
@@ -40,7 +46,6 @@ async function initializeFirebase() {
         }
     }
     resolveInitialization(true);
-    return { app, auth, db };
 }
 
 // Immediately start initialization

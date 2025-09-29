@@ -58,9 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const initialize = async () => {
+    const initializeAuth = async () => {
       await initializationPromise; // Wait for Firebase to be ready
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setLoading(true);
         if (user) {
           setUser(user);
           await fetchUserProfile(user);
@@ -76,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return () => unsubscribe();
     };
 
-    initialize();
+    initializeAuth();
   }, [fetchUserProfile]);
 
   const login = async (email: string, pass: string) => {
