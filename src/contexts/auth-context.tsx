@@ -41,7 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, pass: string) => {
-    await signInWithEmailAndPassword(auth, email, pass);
+    const authInstance = getAuth();
+    await signInWithEmailAndPassword(authInstance, email, pass);
     if(email === 'admin@example.com') {
       router.push('/dashboard');
     } else {
@@ -50,7 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (email: string, pass: string) => {
-    await createUserWithEmailAndPassword(auth, email, pass);
+    const authInstance = getAuth();
+    await createUserWithEmailAndPassword(authInstance, email, pass);
     router.push('/profile');
   };
 
@@ -64,20 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const publicRoutes = ['/login', '/signup'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading) {
+      if (!user && !isPublicRoute) {
+        router.push('/login');
+      }
+      if (user && isPublicRoute) {
+        router.push('/');
+      }
+    }
+  }, [user, loading, isPublicRoute, router]);
+
+  if (loading || (!user && !isPublicRoute) || (user && isPublicRoute)) {
     return null; // Or a loading spinner
   }
-
-  if (!loading && !user && !isPublicRoute) {
-    router.push('/login');
-    return null;
-  }
-  
-  if (!loading && user && isPublicRoute) {
-      router.push('/');
-      return null;
-  }
-
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
