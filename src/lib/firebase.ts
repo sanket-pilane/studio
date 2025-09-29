@@ -1,7 +1,7 @@
 
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   projectId: "studio-4704287603-f1b1f",
@@ -12,22 +12,38 @@ const firebaseConfig = {
   messagingSenderId: "407389153009"
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 
-// Enable offline persistence
-if (typeof window !== 'undefined') {
-  try {
-    enableIndexedDbPersistence(db);
-  } catch (err: any) {
-    if (err.code == 'failed-precondition') {
-      console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
-    } else if (err.code == 'unimplemented') {
-      console.warn('The current browser does not support all of the features required to enable persistence.');
+let resolveInitialization: (value: unknown) => void;
+const initializationPromise = new Promise((resolve) => {
+    resolveInitialization = resolve;
+});
+
+async function initializeFirebase() {
+    if (app) return { app, auth, db };
+
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    if (typeof window !== 'undefined') {
+        try {
+            await enableIndexedDbPersistence(db);
+        } catch (err: any) {
+            if (err.code == 'failed-precondition') {
+                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+            } else if (err.code == 'unimplemented') {
+                console.warn('The current browser does not support all of the features required to enable persistence.');
+            }
+        }
     }
-  }
+    resolveInitialization(true);
+    return { app, auth, db };
 }
 
+// Immediately start initialization
+initializeFirebase();
 
-export { app, auth, db };
+export { app, auth, db, initializationPromise };

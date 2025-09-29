@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, initializationPromise } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
@@ -34,43 +34,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUserProfileCallback = useCallback(async (firebaseUser: User | null) => {
+  const fetchUserProfile = useCallback(async (firebaseUser: User | null) => {
     if (!firebaseUser) {
         setUserProfile(null);
         return;
     }
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
-    if(userDoc.exists()){
+    if (userDoc.exists()) {
         setUserProfile(userDoc.data() as UserProfile);
-    } else if (firebaseUser.displayName || firebaseUser.email) {
+    } else {
         const defaultProfile = { 
             fullName: firebaseUser.displayName || firebaseUser.email!.split('@')[0], 
             vehicle: '' 
         };
-        await setDoc(userDocRef, defaultProfile);
-        setUserProfile(defaultProfile);
+        try {
+            await setDoc(userDocRef, defaultProfile);
+            setUserProfile(defaultProfile);
+        } catch (error) {
+            console.error("Error creating user profile:", error);
+        }
     }
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
-      if (user) {
-        setUser(user);
-        await fetchUserProfileCallback(user);
-        const token = await user.getIdTokenResult();
-        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
-      } else {
-        setUser(null);
-        setUserProfile(null);
-        setIsAdmin(false);
-      }
-      setLoading(false);
-    });
+    const initialize = async () => {
+      await initializationPromise; // Wait for Firebase to be ready
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          setUser(user);
+          await fetchUserProfile(user);
+          const token = await user.getIdTokenResult();
+          setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
+        } else {
+          setUser(null);
+          setUserProfile(null);
+          setIsAdmin(false);
+        }
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    };
 
-    return () => unsubscribe();
-  }, [fetchUserProfileCallback]);
+    initialize();
+  }, [fetchUserProfile]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
@@ -83,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fullName: fullName,
         vehicle: ''
     });
-    await fetchUserProfileCallback(user);
+    await fetchUserProfile(user);
   };
 
   const logout = async () => {
@@ -95,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
         const userDocRef = doc(db, 'users', user.uid);
         await setDoc(userDocRef, data, { merge: true });
-        await fetchUserProfileCallback(user);
+        await fetchUserProfile(user);
     }
   };
 
@@ -107,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login, 
       signup, 
       logout, 
-      fetchUserProfile: () => fetchUserProfileCallback(user), 
+      fetchUserProfile: () => fetchUserProfile(user), 
       updateUserProfile 
     };
 
