@@ -91,13 +91,12 @@ export async function getStations(): Promise<Station[]> {
     const querySnapshot = await getDocs(stationsCollection);
     
     if (querySnapshot.empty) {
-        // If there are no stations, create the dummy stations and return them
         console.log("No stations found. Seeding database with dummy data.");
         const batch = writeBatch(db);
         const newStations: Station[] = [];
         
         dummyStations.forEach(stationData => {
-            const docRef = doc(stationsCollection); // Create a new doc with a random ID
+            const docRef = doc(stationsCollection); 
             batch.set(docRef, stationData);
             newStations.push({ id: docRef.id, ...stationData });
         });
