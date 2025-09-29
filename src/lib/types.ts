@@ -1,3 +1,4 @@
+
 export type Connector = {
   type: 'Tesla' | 'CCS' | 'Type 2' | 'CHAdeMO';
   speed: number; // in kW
@@ -19,7 +20,7 @@ export type Station = {
 };
 
 export type Booking = {
-  id: string;
+  id?: string;
   stationId: string;
   stationName: string;
   userId: string;

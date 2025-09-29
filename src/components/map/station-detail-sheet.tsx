@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -13,9 +14,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Station } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import { Star, Zap, Plug, DollarSign, MapPin, Navigation } from 'lucide-react';
+import { Star, Zap, Plug, DollarSign, MapPin, Navigation, Loader2 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ScrollArea } from '../ui/scroll-area';
+import { useAuth } from '@/contexts/auth-context';
+import { useState } from 'react';
+import { createBooking } from '@/ai/flows/booking-flow';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 type StationDetailSheetProps = {
   station: Station | null;
@@ -24,6 +30,10 @@ type StationDetailSheetProps = {
 
 export default function StationDetailSheet({ station, onOpenChange }: StationDetailSheetProps) {
     const stationImage = PlaceHolderImages[0];
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const router = useRouter();
+    const [bookingLoading, setBookingLoading] = useState(false);
 
   const handleGetDirections = () => {
     if (station) {
@@ -32,6 +42,48 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
       window.open(url, '_blank');
     }
   };
+
+  const handleBookNow = async () => {
+    if (!user || !station) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to book a station.",
+        });
+        router.push('/login');
+        return;
+    }
+
+    setBookingLoading(true);
+    try {
+        const now = new Date();
+        const booking = {
+            stationId: station.id,
+            stationName: station.name,
+            userId: user.uid,
+            date: now.toISOString().split('T')[0],
+            time: now.toTimeString().split(' ')[0].slice(0,5),
+            status: 'Confirmed' as const
+        };
+        await createBooking(booking);
+        toast({
+            title: "Booking Successful!",
+            description: `Your booking at ${station.name} is confirmed.`,
+        });
+        onOpenChange(false);
+        router.push('/profile');
+    } catch (error) {
+        console.error("Booking failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Booking Failed",
+            description: "Could not create your booking. Please try again.",
+        });
+    } finally {
+        setBookingLoading(false);
+    }
+  };
+
 
   return (
     <Sheet open={!!station} onOpenChange={onOpenChange}>
@@ -102,8 +154,8 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
                   <h4 className="font-semibold mb-3">Book a Slot</h4>
                   <p className="text-sm text-muted-foreground mb-4">Secure your spot before you arrive.</p>
 
-                   <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                      Book Now
+                   <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBookNow} disabled={bookingLoading}>
+                      {bookingLoading ? <Loader2 className="animate-spin" /> : "Book Now"}
                   </Button>
 
               </div>

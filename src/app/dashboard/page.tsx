@@ -15,15 +15,21 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getAllBookings } from "@/ai/flows/booking-flow"
+import type { Booking } from "@/lib/types"
 
 export default function DashboardPage() {
     const { isAdmin, loading } = useAuth();
     const router = useRouter();
+    const [bookings, setBookings] = useState<Booking[]>([]);
 
     useEffect(() => {
         if (!loading && !isAdmin) {
             router.push('/');
+        }
+        if(isAdmin){
+            getAllBookings().then(setBookings);
         }
     }, [isAdmin, loading, router]);
     
@@ -81,8 +87,8 @@ export default function DashboardPage() {
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+573</div>
-              <p className="text-xs text-muted-foreground">+201 since last hour</p>
+              <div className="text-2xl font-bold">+{bookings.filter(b => b.status === 'Confirmed').length}</div>
+              <p className="text-xs text-muted-foreground">Total {bookings.length} bookings</p>
             </CardContent>
           </Card>
         </div>
@@ -144,4 +150,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-

@@ -1,24 +1,44 @@
 
 'use client';
 
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/contexts/auth-context"
-import { bookings } from "@/lib/data"
 import { cn } from "@/lib/utils"
-import { CreditCard, MapPin, User, Car } from "lucide-react"
+import { CreditCard, Car, Loader2 } from "lucide-react"
+import { getUserBookings } from "@/ai/flows/booking-flow";
+import type { Booking } from "@/lib/types";
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      getUserBookings(user.uid)
+        .then(setBookings)
+        .finally(() => setLoadingBookings(false));
+    }
+  }, [user]);
   
+  if (authLoading || !user) {
+    return (
+      <div className="container mx-auto p-4 md:p-8 flex justify-center items-center h-[calc(100vh-10rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const profile = {
-    name: user?.displayName || "Alex Doe",
-    email: user?.email || "alex.doe@example.com",
-    initials: user?.displayName?.charAt(0) || "AD",
-    avatarUrl: user?.photoURL || `https://i.pravatar.cc/150?u=${user?.email}`,
+    name: user.displayName || "Alex Doe",
+    email: user.email || "alex.doe@example.com",
+    initials: user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || "A",
+    avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.email}`,
     vehicle: "Tesla Model Y",
   }
 
@@ -56,38 +76,49 @@ export default function ProfilePage() {
               <CardDescription>A record of all your past and upcoming charging sessions.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Station</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead className="text-right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bookings.map((booking) => (
-                    <TableRow key={booking.id}>
-                      <TableCell className="font-medium">{booking.stationName}</TableCell>
-                      <TableCell>{booking.date} at {booking.time}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge
-                          variant={
-                            booking.status === 'Confirmed' ? 'default' :
-                            booking.status === 'Completed' ? 'secondary' :
-                            'destructive'
-                          }
-                          className={cn({
-                            'bg-blue-500 hover:bg-blue-600': booking.status === 'Confirmed',
-                            'bg-green-500 hover:bg-green-600': booking.status === 'Completed',
-                          })}
-                        >
-                          {booking.status}
-                        </Badge>
-                      </TableCell>
+              {loadingBookings ? (
+                 <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Station</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {bookings.length > 0 ? bookings.map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell className="font-medium">{booking.stationName}</TableCell>
+                        <TableCell>{booking.date} at {booking.time}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={
+                              booking.status === 'Confirmed' ? 'default' :
+                              booking.status === 'Completed' ? 'secondary' :
+                              'destructive'
+                            }
+                            className={cn({
+                              'bg-blue-500 hover:bg-blue-600 text-white': booking.status === 'Confirmed',
+                              'bg-green-500 hover:bg-green-600': booking.status === 'Completed',
+                              'bg-red-500 hover:bg-red-600 text-white': booking.status === 'Cancelled',
+                            })}
+                          >
+                            {booking.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center">No bookings found.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
