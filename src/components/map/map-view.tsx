@@ -13,7 +13,7 @@ import StationDetailSheet from './station-detail-sheet';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-const SAN_FRANCISCO_CENTER = { lat: 37.7749, lng: -122.4194 };
+const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
 export default function MapView() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -37,7 +37,7 @@ export default function MapView() {
     <div className="h-full w-full rounded-lg overflow-hidden shadow-lg">
       <APIProvider apiKey={apiKey}>
         <Map
-          defaultCenter={SAN_FRANCISCO_CENTER}
+          defaultCenter={PUNE_CENTER}
           defaultZoom={12}
           mapId="chargerspot_map"
           gestureHandling={'greedy'}

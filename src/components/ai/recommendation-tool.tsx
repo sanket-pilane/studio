@@ -54,8 +54,8 @@ export default function RecommendationTool() {
     try {
       // Using a hardcoded location for prototype purposes
       const input = {
-        latitude: 37.7749, // San Francisco
-        longitude: -122.4194,
+        latitude: 18.5204, // Pune
+        longitude: 73.8567,
         time: new Date(values.time).toISOString(),
         connectorType: values.connectorType,
       };
