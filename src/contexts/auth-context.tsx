@@ -1,43 +1,71 @@
 
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
+interface UserProfile {
+    fullName: string;
+    vehicle: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   isAdmin: boolean;
   loading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (email: string, pass: string) => Promise<void>;
+  signup: (email: string, pass: string, fullName: string) => Promise<void>;
   logout: () => void;
+  fetchUserProfile: () => void;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
+  const fetchUserProfile = useCallback(async (firebaseUser: User | null = auth.currentUser) => {
+    if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        if(userDoc.exists()){
+            setUserProfile(userDoc.data() as UserProfile);
+        } else {
+            // Create a default profile if it doesn't exist
+            const defaultProfile = { fullName: firebaseUser.displayName || 'New User', vehicle: '' };
+            await setDoc(userDocRef, defaultProfile);
+            setUserProfile(defaultProfile);
+        }
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        // Hardcoded admin check
-        setIsAdmin(user.email === 'admin@example.com');
+        await fetchUserProfile(user);
+        const token = await user.getIdTokenResult();
+        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
+
       } else {
         setIsAdmin(false);
+        setUserProfile(null);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserProfile]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
@@ -48,8 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (email: string, pass: string) => {
-    await createUserWithEmailAndPassword(auth, email, pass);
+  const signup = async (email: string, pass: string, fullName: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
+    await setDoc(doc(db, 'users', user.uid), {
+        fullName: fullName,
+        vehicle: ''
+    });
     router.push('/');
   };
 
@@ -58,7 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
-  const value = { user, isAdmin, loading, login, signup, logout };
+  const updateUserProfile = async (data: Partial<UserProfile>) => {
+    if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        await setDoc(userDocRef, data, { merge: true });
+        await fetchUserProfile();
+    }
+  };
+
+  const value = { user, userProfile, isAdmin, loading, login, signup, logout, fetchUserProfile, updateUserProfile };
 
   const publicRoutes = ['/login', '/signup'];
   const isPublicRoute = publicRoutes.includes(pathname);
@@ -68,35 +109,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user && !isPublicRoute) {
         router.push('/login');
       }
-      if (user && isPublicRoute) {
-        if(isAdmin){
-          router.push('/dashboard');
-        } else {
-          router.push('/');
-        }
-      }
     }
-  }, [user, loading, isPublicRoute, router, isAdmin]);
+  }, [user, loading, isPublicRoute, router, isAdmin, pathname]);
 
-  // This prevents a flash of the login page if the user is already logged in.
-  if (loading || (!user && !isPublicRoute)) {
+  if (loading) {
     return (
         <div className="flex items-center justify-center h-screen">
-            {/* You can replace this with a more sophisticated loader component */}
             <p>Loading...</p>
         </div>
     );
   }
-  
-  // This prevents a flash of the public page if the user is logged in.
-  if (user && isPublicRoute) {
-      return (
-        <div className="flex items-center justify-center h-screen">
-            <p>Redirecting...</p>
-        </div>
-    );
-  }
-
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

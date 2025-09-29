@@ -9,24 +9,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-import { CreditCard, Car, Loader2 } from "lucide-react"
-import { getUserBookings } from "@/ai/flows/booking-flow";
+import { CreditCard, Car, Loader2, XCircle } from "lucide-react"
+import { getUserBookings, cancelBooking } from "@/ai/flows/booking-flow";
 import type { Booking } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import EditProfileDialog from "@/components/profile/edit-profile-dialog";
 
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, userProfile, fetchUserProfile } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchBookings = () => {
     if (user) {
+      setLoadingBookings(true);
       getUserBookings(user.uid)
         .then(setBookings)
         .finally(() => setLoadingBookings(false));
     }
+  }
+
+  useEffect(() => {
+    fetchBookings();
+    if(user) fetchUserProfile();
   }, [user]);
   
-  if (authLoading || !user) {
+  const handleCancelBooking = async (bookingId?: string) => {
+    if(!bookingId) return;
+    try {
+        await cancelBooking(bookingId);
+        toast({
+            title: "Booking Cancelled",
+            description: "Your booking has been successfully cancelled.",
+        });
+        fetchBookings(); // Refresh bookings list
+    } catch (error) {
+        console.error("Failed to cancel booking:", error);
+        toast({
+            variant: "destructive",
+            title: "Cancellation Failed",
+            description: "Could not cancel your booking. Please try again.",
+        });
+    }
+  }
+
+  if (authLoading || !user || !userProfile) {
     return (
       <div className="container mx-auto p-4 md:p-8 flex justify-center items-center h-[calc(100vh-10rem)]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -35,11 +64,11 @@ export default function ProfilePage() {
   }
 
   const profile = {
-    name: user.displayName || "Alex Doe",
+    name: userProfile.fullName || user.displayName || "Alex Doe",
     email: user.email || "alex.doe@example.com",
-    initials: user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || "A",
+    initials: userProfile.fullName?.charAt(0) || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || "A",
     avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.email}`,
-    vehicle: "Tesla Model Y",
+    vehicle: userProfile.vehicle || "Not set",
   }
 
   return (
@@ -65,7 +94,9 @@ export default function ProfilePage() {
                 <CreditCard className="mr-3 h-5 w-5" />
                 <span>Payment: <strong>Visa **** 4242</strong></span>
               </div>
-              <Button variant="outline" className="w-full mt-4">Edit Profile</Button>
+              <Button variant="outline" className="w-full mt-4" onClick={() => setIsEditDialogOpen(true)}>
+                Edit Profile
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -87,6 +118,7 @@ export default function ProfilePage() {
                       <TableHead>Station</TableHead>
                       <TableHead>Date & Time</TableHead>
                       <TableHead className="text-right">Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -110,10 +142,17 @@ export default function ProfilePage() {
                             {booking.status}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-right">
+                            {booking.status === 'Confirmed' && (
+                                <Button variant="ghost" size="sm" onClick={() => handleCancelBooking(booking.id)}>
+                                    <XCircle className="mr-2 h-4 w-4" /> Cancel
+                                </Button>
+                            )}
+                        </TableCell>
                       </TableRow>
                     )) : (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center">No bookings found.</TableCell>
+                        <TableCell colSpan={4} className="text-center">No bookings found.</TableCell>
                       </TableRow>
                     )}
                   </TableBody>
@@ -123,6 +162,14 @@ export default function ProfilePage() {
           </Card>
         </div>
       </div>
+      <EditProfileDialog 
+        isOpen={isEditDialogOpen} 
+        onOpenChange={setIsEditDialogOpen} 
+        onProfileUpdate={() => {
+          fetchUserProfile();
+          toast({ title: 'Profile Updated', description: 'Your profile has been successfully updated.' });
+        }}
+      />
     </div>
   )
 }

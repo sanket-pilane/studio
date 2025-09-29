@@ -6,11 +6,11 @@
  * - createBooking: Creates a new booking document.
  * - getUserBookings: Retrieves all bookings for a specific user.
  * - getAllBookings: Retrieves all bookings (for admin use).
+ * - cancelBooking: Cancels a specific booking.
  */
 
-import { ai } from '@/ai/genkit';
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { z } from 'genkit';
-import { getFirestore, collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import type { Booking } from '@/lib/types';
 
@@ -38,7 +38,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
   querySnapshot.forEach((doc) => {
     bookings.push({ id: doc.id, ...doc.data() } as Booking);
   });
-  return bookings;
+  return bookings.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
@@ -48,4 +48,12 @@ export async function getAllBookings(): Promise<Booking[]> {
         bookings.push({ id: doc.id, ...doc.data() } as Booking);
     });
     return bookings;
+}
+
+export async function cancelBooking(bookingId: string): Promise<{ id: string }> {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await updateDoc(bookingRef, {
+        status: 'Cancelled'
+    });
+    return { id: bookingId };
 }

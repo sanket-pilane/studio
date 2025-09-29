@@ -154,8 +154,10 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
                   <h4 className="font-semibold mb-3">Book a Slot</h4>
                   <p className="text-sm text-muted-foreground mb-4">Secure your spot before you arrive.</p>
 
-                   <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBookNow} disabled={bookingLoading}>
-                      {bookingLoading ? <Loader2 className="animate-spin" /> : "Book Now"}
+                   <Button className="w-full" onClick={handleBookNow} disabled={bookingLoading || station.availableChargers === 0}>
+                      {bookingLoading ? <Loader2 className="animate-spin" /> : 
+                       station.availableChargers === 0 ? "Station Full" : "Book Now"
+                      }
                   </Button>
 
               </div>

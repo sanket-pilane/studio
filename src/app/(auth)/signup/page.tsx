@@ -31,7 +31,7 @@ export default function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await signup(email, password);
+      await signup(email, password, fullName);
     } catch (error: any) {
        toast({
         variant: 'destructive',
