@@ -25,7 +25,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
+      <body className={cn('font-body antialiased min-h-screen flex flex-col')} suppressHydrationWarning>
         <AuthProvider>
           <Header />
           <main className="flex-grow">{children}</main>
