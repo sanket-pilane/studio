@@ -132,7 +132,7 @@ export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved
                <FormField control={form.control} name="coordinates.lat" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Latitude</FormLabel>
-                    <FormControl><Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                    <FormControl><Input type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -140,7 +140,7 @@ export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved
                <FormField control={form.control} name="coordinates.lng" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Longitude</FormLabel>
-                    <FormControl><Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                    <FormControl><Input type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -150,28 +150,28 @@ export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved
                 <FormField control={form.control} name="price" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Price/kWh</FormLabel>
-                        <FormControl><Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                        <FormControl><Input type="number" step="any" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="totalChargers" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Total Chargers</FormLabel>
-                        <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                        <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="availableChargers" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Available Now</FormLabel>
-                        <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
+                        <FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                  <FormField control={form.control} name="rating" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Rating</FormLabel>
-                        <FormControl><Input type="number" step="0.1" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                        <FormControl><Input type="number" step="0.1" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -212,7 +212,7 @@ export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormControl>
-                                            <Input type="number" placeholder="Speed (kW)" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} />
+                                            <Input type="number" placeholder="Speed (kW)" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseInt(e.target.value, 10) || 0)} />
                                         </FormControl>
                                         <FormMessage/>
                                     </FormItem>
