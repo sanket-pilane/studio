@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -74,54 +73,49 @@ export default function RecommendationTool() {
     }
   }
 
-  const handleTimeChange = (part: 'hour' | 'minute' | 'ampm', value: string) => {
-    const newDate = new Date(form.getValues('date'));
-    let currentHour = newDate.getHours();
-    
-    if (part === 'hour') {
-      const isPM = currentHour >= 12;
-      let newHour = parseInt(value, 10);
-      if (isPM && newHour !== 12) newHour += 12;
-      if (!isPM && newHour === 12) newHour = 0; // Midnight case
-      newDate.setHours(newHour);
-    } else if (part === 'minute') {
-      newDate.setMinutes(parseInt(value, 10));
-    } else if (part === 'ampm') {
-      const isPM = value === 'PM';
-      if (isPM && currentHour < 12) {
-        newDate.setHours(currentHour + 12);
-      } else if (!isPM && currentHour >= 12) {
-        newDate.setHours(currentHour - 12);
+  // Generate times in 12-hour format with AM/PM
+  const generateTimes = () => {
+    const times: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const hour12 = h % 12 === 0 ? 12 : h % 12;
+        const min = m.toString().padStart(2, '0');
+        times.push(`${hour12}:${min} ${ampm}`);
       }
     }
-    form.setValue('date', newDate, { shouldValidate: true, shouldDirty: true });
+    return times;
   };
-  
-  const selectedDate = form.watch('date');
-  const selectedHour = selectedDate.getHours();
-  const displayHour = selectedHour % 12 === 0 ? 12 : selectedHour % 12;
-  const selectedMinute = selectedDate.getMinutes();
-  const selectedAmPm = selectedHour >= 12 ? 'PM' : 'AM';
 
+  const parseTimeValue = (val: string) => {
+    const [time, ampm] = val.split(' ');
+    let [h, m] = time.split(':').map(Number);
+    if (ampm === 'PM' && h < 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return { h, m };
+  };
 
   return (
     <div className="space-y-6 max-w-md sm:max-w-lg lg:max-w-2xl mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Date & Time */}
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col min-w-0">
                 <FormLabel>Charging Date & Time</FormLabel>
-                <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+
+                <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-col gap-2 min-w-0">
+                  {/* Calendar Picker */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <FormControl>
+                      <FormControl className="min-w-0">
                         <Button
                           variant={'outline'}
                           className={cn(
-                            'w-full justify-start text-left font-normal',
+                            'w-full sm:w-[220px] min-w-0 justify-start text-left font-normal',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
@@ -132,6 +126,7 @@ export default function RecommendationTool() {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
+
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
@@ -151,40 +146,43 @@ export default function RecommendationTool() {
                     </PopoverContent>
                   </Popover>
 
-                  <div className="flex gap-2">
-                    <Select value={String(displayHour)} onValueChange={(v) => handleTimeChange('hour', v)}>
-                      <SelectTrigger className="w-[80px]">
-                        <SelectValue />
+                  {/* Time Picker (12-hour format) */}
+                  <Select
+                    onValueChange={(val) => {
+                      const { h, m } = parseTimeValue(val);
+                      const newDate = new Date(form.getValues('date'));
+                      newDate.setHours(h, m);
+                      form.setValue('date', newDate, { shouldValidate: true });
+                    }}
+                    value={(() => {
+                      const d = form.getValues('date');
+                      const h24 = d.getHours();
+                      const m = d.getMinutes().toString().padStart(2, '0');
+                      const ampm = h24 >= 12 ? 'PM' : 'AM';
+                      const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+                      return `${h12}:${m} ${ampm}`;
+                    })()}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full sm:w-[140px]">
+                        <SelectValue placeholder="Select time" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{h}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <Select value={String(selectedMinute).padStart(2, '0')} onValueChange={(v) => handleTimeChange('minute', v)}>
-                      <SelectTrigger className="w-[80px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {['00', '15', '30', '45'].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                     <Select value={selectedAmPm} onValueChange={(v) => handleTimeChange('ampm', v)}>
-                      <SelectTrigger className="w-[80px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
+                    </FormControl>
+                    <SelectContent>
+                      {generateTimes().map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Connector Type */}
           <FormField
             control={form.control}
             name="connectorType"
@@ -209,6 +207,7 @@ export default function RecommendationTool() {
             )}
           />
 
+          {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <Loader2 className="animate-spin" />
@@ -222,6 +221,7 @@ export default function RecommendationTool() {
         </form>
       </Form>
 
+      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center text-sm text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -229,6 +229,7 @@ export default function RecommendationTool() {
         </div>
       )}
 
+      {/* Error */}
       {error && (
         <Alert variant="destructive">
           <ServerCrash className="h-4 w-4" />
@@ -237,6 +238,7 @@ export default function RecommendationTool() {
         </Alert>
       )}
 
+      {/* Result */}
       {result && (
         <Card className="bg-primary/10 border-primary/50">
           <CardHeader>
