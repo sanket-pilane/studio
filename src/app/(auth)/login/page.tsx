@@ -48,7 +48,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
+// chg
   if (authLoading || user) {
      return (
       <div className="flex items-center justify-center h-screen">
