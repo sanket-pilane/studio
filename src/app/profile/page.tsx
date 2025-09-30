@@ -67,7 +67,7 @@ export default function ProfilePage() {
     name: userProfile.fullName || user.displayName || "Alex Doe",
     email: user.email || "alex.doe@example.com",
     initials: userProfile.fullName?.charAt(0) || user.displayName?.charAt(0) || user.email?.charAt(0).toUpperCase() || "A",
-    avatarUrl: user.photoURL || `https://i.pravatar.cc/150?u=${user.email}`,
+    avatarUrl: user.photoURL || undefined,
     vehicle: userProfile.vehicle || "Not set",
   }
 
