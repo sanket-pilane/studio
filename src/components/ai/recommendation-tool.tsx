@@ -77,6 +77,8 @@ export default function RecommendationTool() {
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = e.target.value;
+    if (!time) return;
+
     const [hours, minutes] = time.split(':').map(Number);
     const newDate = new Date(form.getValues('date'));
     newDate.setHours(hours, minutes);
