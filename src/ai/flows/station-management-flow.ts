@@ -139,10 +139,7 @@ export async function updateStation(
     };
     
     // Use the refined schema to validate the complete object
-    const validatedFullObject = RefinedStationSchema.parse(dataToValidate);
-
-    // Remove the id from the validated object before updating Firestore
-    const { id, ...updateData } = validatedFullObject;
+    RefinedStationSchema.parse(dataToValidate);
     
     // Since stationData is partial, we should only update the fields that were passed.
     const finalUpdateData = StationSchema.omit({ id: true }).partial().parse(stationData);
