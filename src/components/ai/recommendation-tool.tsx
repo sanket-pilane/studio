@@ -83,72 +83,76 @@ export default function RecommendationTool() {
     const newDate = new Date(form.getValues('date'));
     newDate.setHours(hours, minutes);
     form.setValue('date', newDate, { shouldValidate: true });
-  }
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Date & Time */}
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Charging Date & Time</FormLabel>
-                <div className="flex gap-2">
-                    <Popover>
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                  {/* Calendar Picker */}
+                  <Popover>
                     <PopoverTrigger asChild>
-                        <FormControl>
+                      <FormControl>
                         <Button
-                            variant={'outline'}
-                            className={cn(
-                            'w-full justify-start text-left font-normal',
+                          variant={'outline'}
+                          className={cn(
+                            'w-full sm:w-[240px] justify-start text-left font-normal',
                             !field.value && 'text-muted-foreground'
-                            )}
+                          )}
                         >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                         </Button>
-                        </FormControl>
+                      </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
+                      <Calendar
                         mode="single"
                         selected={field.value}
                         onSelect={(date) => {
-                            if (date) {
-                                const newDate = new Date(field.value);
-                                newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
-                                field.onChange(newDate);
-                            }
+                          if (date) {
+                            const newDate = new Date(field.value);
+                            newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                            field.onChange(newDate);
+                          }
                         }}
-                        disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
+                        disabled={(date) =>
+                          date < new Date(new Date().setDate(new Date().getDate() - 1))
+                        }
                         initialFocus
-                        />
+                      />
                     </PopoverContent>
-                    </Popover>
-                    <Input 
-                        type="time" 
-                        value={format(field.value, 'HH:mm')}
-                        onChange={handleTimeChange}
-                        className="w-[120px]" 
-                    />
+                  </Popover>
+
+                  {/* Time Picker */}
+                  <Input
+                    type="time"
+                    value={field.value ? field.value.toISOString().slice(11, 16) : ''}
+                    onChange={handleTimeChange}
+                    className="w-full sm:w-auto"
+                  />
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+
+          {/* Connector Type */}
           <FormField
             control={form.control}
             name="connectorType"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Connector Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a connector" />
@@ -165,6 +169,8 @@ export default function RecommendationTool() {
               </FormItem>
             )}
           />
+
+          {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <Loader2 className="animate-spin" />
@@ -177,22 +183,25 @@ export default function RecommendationTool() {
           </Button>
         </form>
       </Form>
-      
+
+      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center text-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Thinking...
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Thinking...
         </div>
       )}
 
+      {/* Error */}
       {error && (
         <Alert variant="destructive">
-            <ServerCrash className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+          <ServerCrash className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
+      {/* Result */}
       {result && (
         <Card className="bg-primary/10 border-primary/50">
           <CardHeader>
