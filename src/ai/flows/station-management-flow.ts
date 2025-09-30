@@ -1,131 +1,145 @@
-
 'use server';
 /**
- * @fileOverview Manages charging station data in Firestore.
+ * @fileOverview Manages charging station data in-memory.
  *
- * - getStations: Retrieves all stations. If none exist, it seeds Firestore with dummy data and returns it.
- * - createStation: Creates a new station document.
- * - updateStation: Updates an existing station document.
- * - deleteStation: Deletes a station document.
+ * - getStations: Retrieves all stations.
+ * - createStation: Creates a new station in the in-memory list.
+ * - updateStation: Updates an existing station in the in-memory list.
+ * - deleteStation: Deletes a station from the in-memory list.
  */
 
-import { getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, DocumentData, writeBatch } from 'firebase/firestore';
-import { z } from 'genkit';
-import { app } from '@/lib/firebase';
+import { StationSchema } from '@/lib/zod-schemas';
 import type { Station } from '@/lib/types';
-import { StationSchema, RefinedStationSchema } from '@/lib/zod-schemas';
+import { randomUUID } from 'crypto';
 
-
-const db = getFirestore(app);
-const stationsCollection = collection(db, 'stations');
-
-const dummyStations: Omit<Station, 'id'>[] = [
-    {
-        name: "Koregaon Park Charge-Up",
-        address: "Lane 7, Koregaon Park, Pune",
-        coordinates: { lat: 18.536, lng: 73.893 },
-        connectors: [{ type: "CCS", speed: 50 }, { type: "CHAdeMO", speed: 40 }],
-        price: 18,
-        totalChargers: 4,
-        availableChargers: 2,
-        rating: 4.7
-    },
-    {
-        name: "Hinjewadi IT Park Superchargers",
-        address: "Phase 1, Hinjewadi Rajiv Gandhi Infotech Park, Pune",
-        coordinates: { lat: 18.591, lng: 73.738 },
-        connectors: [{ type: "Tesla", speed: 150 }, { type: "Type 2", speed: 22 }],
-        price: 20,
-        totalChargers: 8,
-        availableChargers: 8,
-        rating: 4.9
-    },
-    {
-        name: "Viman Nagar Power Point",
-        address: "Near Phoenix Marketcity, Viman Nagar, Pune",
-        coordinates: { lat: 18.563, lng: 73.918 },
-        connectors: [{ type: "CCS", speed: 100 }, { type: "Type 2", speed: 22 }],
-        price: 17,
-        totalChargers: 6,
-        availableChargers: 5,
-        rating: 4.6
-    },
-    {
-        name: "Pune Airport E-Boost",
-        address: "Pune International Airport, Lohegaon",
-        coordinates: { lat: 18.579, lng: 73.909 },
-        connectors: [{ type: "CCS", speed: 50 }],
-        price: 22,
-        totalChargers: 2,
-        availableChargers: 1,
-        rating: 4.4
-    },
-    {
-        name: "Baner-Balewadi Juice Stop",
-        address: "High Street, Balewadi, Pune",
-        coordinates: { lat: 18.570, lng: 73.774 },
-        connectors: [{ type: "Type 2", speed: 22 }, { type: "CCS", speed: 50 }],
-        price: 19,
-        totalChargers: 5,
-        availableChargers: 3,
-        rating: 4.8
-    }
+let stations: Station[] = [
+  {
+    id: 'station-1',
+    name: 'Koregaon Park Charge-Up',
+    address: 'Lane 7, Koregaon Park, Pune',
+    coordinates: { lat: 18.536, lng: 73.893 },
+    connectors: [
+      { type: 'CCS', speed: 50 },
+      { type: 'CHAdeMO', speed: 40 },
+    ],
+    price: 18,
+    totalChargers: 4,
+    availableChargers: 2,
+    rating: 4.7,
+  },
+  {
+    id: 'station-2',
+    name: 'Hinjewadi IT Park Superchargers',
+    address: 'Phase 1, Hinjewadi Rajiv Gandhi Infotech Park, Pune',
+    coordinates: { lat: 18.591, lng: 73.738 },
+    connectors: [
+      { type: 'Tesla', speed: 150 },
+      { type: 'Type 2', speed: 22 },
+    ],
+    price: 20,
+    totalChargers: 8,
+    availableChargers: 8,
+    rating: 4.9,
+  },
+  {
+    id: 'station-3',
+    name: 'Viman Nagar Power Point',
+    address: 'Near Phoenix Marketcity, Viman Nagar, Pune',
+    coordinates: { lat: 18.563, lng: 73.918 },
+    connectors: [
+      { type: 'CCS', speed: 100 },
+      { type: 'Type 2', speed: 22 },
+    ],
+    price: 17,
+    totalChargers: 6,
+    availableChargers: 5,
+    rating: 4.6,
+  },
+  {
+    id: 'station-4',
+    name: 'Pune Airport E-Boost',
+    address: 'Pune International Airport, Lohegaon',
+    coordinates: { lat: 18.579, lng: 73.909 },
+    connectors: [{ type: 'CCS', speed: 50 }],
+    price: 22,
+    totalChargers: 2,
+    availableChargers: 1,
+    rating: 4.4,
+  },
+  {
+    id: 'station-5',
+    name: 'Baner-Balewadi Juice Stop',
+    address: 'High Street, Balewadi, Pune',
+    coordinates: { lat: 18.57, lng: 73.774 },
+    connectors: [
+      { type: 'Type 2', speed: 22 },
+      { type: 'CCS', speed: 50 },
+    ],
+    price: 19,
+    totalChargers: 5,
+    availableChargers: 3,
+    rating: 4.8,
+  },
 ];
 
-function docToStation(doc: DocumentData): Station {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        name: data.name,
-        address: data.address,
-        coordinates: data.coordinates,
-        connectors: data.connectors,
-        price: data.price,
-        totalChargers: data.totalChargers,
-        availableChargers: data.availableChargers,
-        rating: data.rating,
-    };
-}
-
 export async function getStations(): Promise<Station[]> {
-    const querySnapshot = await getDocs(stationsCollection);
-    
-    if (querySnapshot.empty) {
-        console.log("No stations found. Seeding database with dummy data.");
-        const batch = writeBatch(db);
-        const newStations: Station[] = [];
-        
-        dummyStations.forEach(stationData => {
-            const docRef = doc(stationsCollection); 
-            batch.set(docRef, stationData);
-            newStations.push({ id: docRef.id, ...stationData });
-        });
-        
-        await batch.commit();
-        return newStations;
+  // Return a copy to prevent direct mutation
+  return Promise.resolve(JSON.parse(JSON.stringify(stations)));
+}
+
+export async function createStation(
+  stationData: Omit<Station, 'id'>
+): Promise<{ id: string }> {
+  const validationSchema = StationSchema.omit({ id: true }).refine(
+    (data) => data.availableChargers <= data.totalChargers,
+    {
+      message: 'Available chargers cannot exceed total chargers.',
+      path: ['availableChargers'],
     }
-    
-    return querySnapshot.docs.map(docToStation);
+  );
+  const validatedData = validationSchema.parse(stationData);
+
+  const newStation: Station = {
+    ...validatedData,
+    id: randomUUID(),
+  };
+
+  stations.push(newStation);
+  return { id: newStation.id };
 }
 
+export async function updateStation(
+  stationId: string,
+  stationData: Partial<Omit<Station, 'id'>>
+): Promise<{ id: string }> {
+  const updateSchema = StationSchema.omit({ id: true })
+    .partial()
+    .refine(
+      (data) =>
+        data.availableChargers === undefined ||
+        data.totalChargers === undefined ||
+        data.availableChargers <= data.totalChargers,
+      {
+        message: 'Available chargers cannot exceed total chargers.',
+        path: ['availableChargers'],
+      }
+    );
+  const validatedData = updateSchema.parse(stationData);
 
-export async function createStation(stationData: Omit<Station, 'id'>): Promise<{ id: string }> {
-    const validatedData = RefinedStationSchema.omit({id: true}).parse(stationData);
-    const docRef = await addDoc(stationsCollection, validatedData);
-    return { id: docRef.id };
-}
+  const stationIndex = stations.findIndex((s) => s.id === stationId);
+  if (stationIndex === -1) {
+    throw new Error('Station not found');
+  }
 
-export async function updateStation(stationId: string, stationData: Partial<Omit<Station, 'id'>>): Promise<{ id: string }> {
-    const updateSchema = StationSchema.omit({id: true}).partial();
-    const validatedData = updateSchema.parse(stationData);
-    
-    const stationRef = doc(db, 'stations', stationId);
-    await updateDoc(stationRef, validatedData);
-    return { id: stationId };
+  stations[stationIndex] = { ...stations[stationIndex], ...validatedData };
+  return { id: stationId };
 }
 
 export async function deleteStation(stationId: string): Promise<{ id: string }> {
-    const stationRef = doc(db, 'stations', stationId);
-    await deleteDoc(stationRef);
-    return { id: stationId };
+  const stationIndex = stations.findIndex((s) => s.id === stationId);
+  if (stationIndex === -1) {
+    throw new Error('Station not found');
+  }
+  stations.splice(stationIndex, 1);
+  return { id: stationId };
 }
