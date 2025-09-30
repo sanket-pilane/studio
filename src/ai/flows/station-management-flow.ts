@@ -1,20 +1,23 @@
 'use server';
 /**
- * @fileOverview Manages charging station data in-memory.
+ * @fileOverview Manages charging station data in Firestore.
  *
- * - getStations: Retrieves all stations.
- * - createStation: Creates a new station in the in-memory list.
- * - updateStation: Updates an existing station in the in-memory list.
- * - deleteStation: Deletes a station from the in-memory list.
+ * - getStations: Retrieves all stations, seeding initial data if necessary.
+ * - createStation: Creates a new station in Firestore.
+ * - updateStation: Updates an existing station in Firestore.
+ * - deleteStation: Deletes a station from Firestore.
  */
 
-import { StationSchema } from '@/lib/zod-schemas';
+import { StationSchema, RefinedStationSchema } from '@/lib/zod-schemas';
 import type { Station } from '@/lib/types';
-import { randomUUID } from 'crypto';
+import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 
-let stations: Station[] = [
+const db = getFirestore(app);
+const stationsCollection = collection(db, 'stations');
+
+const initialStations: Omit<Station, 'id'>[] = [
   {
-    id: 'station-1',
     name: 'Koregaon Park Charge-Up',
     address: 'Lane 7, Koregaon Park, Pune',
     coordinates: { lat: 18.536, lng: 73.893 },
@@ -28,7 +31,6 @@ let stations: Station[] = [
     rating: 4.7,
   },
   {
-    id: 'station-2',
     name: 'Hinjewadi IT Park Superchargers',
     address: 'Phase 1, Hinjewadi Rajiv Gandhi Infotech Park, Pune',
     coordinates: { lat: 18.591, lng: 73.738 },
@@ -42,7 +44,6 @@ let stations: Station[] = [
     rating: 4.9,
   },
   {
-    id: 'station-3',
     name: 'Viman Nagar Power Point',
     address: 'Near Phoenix Marketcity, Viman Nagar, Pune',
     coordinates: { lat: 18.563, lng: 73.918 },
@@ -56,7 +57,6 @@ let stations: Station[] = [
     rating: 4.6,
   },
   {
-    id: 'station-4',
     name: 'Pune Airport E-Boost',
     address: 'Pune International Airport, Lohegaon',
     coordinates: { lat: 18.579, lng: 73.909 },
@@ -67,7 +67,6 @@ let stations: Station[] = [
     rating: 4.4,
   },
   {
-    id: 'station-5',
     name: 'Baner-Balewadi Juice Stop',
     address: 'High Street, Balewadi, Pune',
     coordinates: { lat: 18.57, lng: 73.774 },
@@ -82,64 +81,74 @@ let stations: Station[] = [
   },
 ];
 
+async function seedInitialStations(): Promise<Station[]> {
+    console.log("Seeding initial stations into Firestore...");
+    const batch = writeBatch(db);
+    const seededStations: Station[] = [];
+
+    for (const stationData of initialStations) {
+        const docRef = doc(stationsCollection); // Auto-generate ID
+        batch.set(docRef, stationData);
+        seededStations.push({ ...stationData, id: docRef.id });
+    }
+
+    await batch.commit();
+    console.log("Seeding complete.");
+    return seededStations;
+}
+
+
 export async function getStations(): Promise<Station[]> {
-  // Return a copy to prevent direct mutation
-  return Promise.resolve(JSON.parse(JSON.stringify(stations)));
+  const snapshot = await getDocs(stationsCollection);
+  if (snapshot.empty) {
+      // If the database is empty, seed it with initial data
+      return await seedInitialStations();
+  }
+  
+  const stations: Station[] = [];
+  snapshot.forEach((doc) => {
+    stations.push({ id: doc.id, ...doc.data() } as Station);
+  });
+  return stations;
 }
 
 export async function createStation(
   stationData: Omit<Station, 'id'>
 ): Promise<{ id: string }> {
-  const validationSchema = StationSchema.omit({ id: true }).refine(
-    (data) => data.availableChargers <= data.totalChargers,
-    {
-      message: 'Available chargers cannot exceed total chargers.',
-      path: ['availableChargers'],
-    }
-  );
-  const validatedData = validationSchema.parse(stationData);
-
-  const newStation: Station = {
-    ...validatedData,
-    id: randomUUID(),
-  };
-
-  stations.push(newStation);
-  return { id: newStation.id };
+    const validatedData = RefinedStationSchema.omit({id: true}).parse(stationData);
+    const docRef = await addDoc(stationsCollection, validatedData);
+    return { id: docRef.id };
 }
 
 export async function updateStation(
   stationId: string,
   stationData: Partial<Omit<Station, 'id'>>
 ): Promise<{ id: string }> {
-  const updateSchema = StationSchema.omit({ id: true })
-    .partial()
-    .refine(
-      (data) =>
-        data.availableChargers === undefined ||
-        data.totalChargers === undefined ||
-        data.availableChargers <= data.totalChargers,
-      {
-        message: 'Available chargers cannot exceed total chargers.',
-        path: ['availableChargers'],
-      }
-    );
-  const validatedData = updateSchema.parse(stationData);
+    // We need to fetch the existing station to properly validate the update
+    const stationRef = doc(db, 'stations', stationId);
+    const stationSnap = await getDoc(stationRef);
+    if (!stationSnap.exists()) {
+        throw new Error("Station not found");
+    }
+    const existingStation = stationSnap.data();
 
-  const stationIndex = stations.findIndex((s) => s.id === stationId);
-  if (stationIndex === -1) {
-    throw new Error('Station not found');
-  }
+    // Create a temporary object for validation
+    const dataToValidate = {
+        ...existingStation,
+        ...stationData,
+    };
+    
+    const validatedData = RefinedStationSchema.omit({id: true}).partial().parse(dataToValidate);
 
-  stations[stationIndex] = { ...stations[stationIndex], ...validatedData };
-  return { id: stationId };
+    await updateDoc(stationRef, validatedData);
+    return { id: stationId };
 }
 
 export async function deleteStation(stationId: string): Promise<{ id: string }> {
-  const stationIndex = stations.findIndex((s) => s.id === stationId);
-  if (stationIndex === -1) {
-    throw new Error('Station not found');
+  if (!stationId) {
+    throw new Error('Station ID is required');
   }
-  stations.splice(stationIndex, 1);
+  const stationRef = doc(db, 'stations', stationId);
+  await deleteDoc(stationRef);
   return { id: stationId };
 }
