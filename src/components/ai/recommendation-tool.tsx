@@ -19,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -75,29 +74,47 @@ export default function RecommendationTool() {
     }
   }
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = e.target.value;
-    if (!time) return;
-
-    const [hours, minutes] = time.split(':').map(Number);
+  const handleTimeChange = (part: 'hour' | 'minute' | 'ampm', value: string) => {
     const newDate = new Date(form.getValues('date'));
-    newDate.setHours(hours, minutes);
-    form.setValue('date', newDate, { shouldValidate: true });
+    let currentHour = newDate.getHours();
+    
+    if (part === 'hour') {
+      const isPM = currentHour >= 12;
+      let newHour = parseInt(value, 10);
+      if (isPM && newHour !== 12) newHour += 12;
+      if (!isPM && newHour === 12) newHour = 0; // Midnight case
+      newDate.setHours(newHour);
+    } else if (part === 'minute') {
+      newDate.setMinutes(parseInt(value, 10));
+    } else if (part === 'ampm') {
+      const isPM = value === 'PM';
+      if (isPM && currentHour < 12) {
+        newDate.setHours(currentHour + 12);
+      } else if (!isPM && currentHour >= 12) {
+        newDate.setHours(currentHour - 12);
+      }
+    }
+    form.setValue('date', newDate, { shouldValidate: true, shouldDirty: true });
   };
+  
+  const selectedDate = form.watch('date');
+  const selectedHour = selectedDate.getHours();
+  const displayHour = selectedHour % 12 === 0 ? 12 : selectedHour % 12;
+  const selectedMinute = selectedDate.getMinutes();
+  const selectedAmPm = selectedHour >= 12 ? 'PM' : 'AM';
+
 
   return (
-    <div className="space-y-6 max-w-md mx-auto">
+    <div className="space-y-6 max-w-md sm:max-w-lg lg:max-w-2xl mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Date & Time */}
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
+              <FormItem className="flex flex-col min-w-0">
                 <FormLabel>Charging Date & Time</FormLabel>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {/* Calendar Picker */}
+                <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -108,8 +125,10 @@ export default function RecommendationTool() {
                             !field.value && 'text-muted-foreground'
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                          <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                          </span>
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -132,20 +151,40 @@ export default function RecommendationTool() {
                     </PopoverContent>
                   </Popover>
 
-                  {/* Time Picker */}
-                  <Input
-                    type="time"
-                    value={field.value ? field.value.toTimeString().slice(0, 5) : ''}
-                    onChange={handleTimeChange}
-                    className="w-full sm:w-auto"
-                  />
+                  <div className="flex gap-2">
+                    <Select value={String(displayHour)} onValueChange={(v) => handleTimeChange('hour', v)}>
+                      <SelectTrigger className="w-[80px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <SelectItem key={h} value={String(h)}>{h}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    <Select value={String(selectedMinute).padStart(2, '0')} onValueChange={(v) => handleTimeChange('minute', v)}>
+                      <SelectTrigger className="w-[80px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {['00', '15', '30', '45'].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                     <Select value={selectedAmPm} onValueChange={(v) => handleTimeChange('ampm', v)}>
+                      <SelectTrigger className="w-[80px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Connector Type */}
           <FormField
             control={form.control}
             name="connectorType"
@@ -170,7 +209,6 @@ export default function RecommendationTool() {
             )}
           />
 
-          {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
               <Loader2 className="animate-spin" />
@@ -184,7 +222,6 @@ export default function RecommendationTool() {
         </form>
       </Form>
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center text-sm text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -192,7 +229,6 @@ export default function RecommendationTool() {
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <Alert variant="destructive">
           <ServerCrash className="h-4 w-4" />
@@ -201,7 +237,6 @@ export default function RecommendationTool() {
         </Alert>
       )}
 
-      {/* Result */}
       {result && (
         <Card className="bg-primary/10 border-primary/50">
           <CardHeader>
