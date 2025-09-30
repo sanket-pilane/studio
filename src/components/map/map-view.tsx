@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   APIProvider,
   Map,
@@ -22,20 +22,22 @@ export default function MapView() {
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchStations() {
-        try {
-            const stationsData = await getStations();
-            setStations(stationsData);
-        } catch (error) {
-            console.error("Failed to fetch stations:", error);
-            // Optionally show a toast or error message to the user
-        } finally {
-            setLoading(false);
-        }
+  const fetchStations = useCallback(async () => {
+    try {
+      setLoading(true);
+      const stationsData = await getStations();
+      setStations(stationsData);
+    } catch (error) {
+      console.error("Failed to fetch stations:", error);
+      // Optionally show a toast or error message to the user
+    } finally {
+      setLoading(false);
     }
-    fetchStations();
   }, []);
+
+  useEffect(() => {
+    fetchStations();
+  }, [fetchStations]);
 
   if (!apiKey) {
     return (
@@ -88,6 +90,9 @@ export default function MapView() {
         onOpenChange={(isOpen) => {
             if (!isOpen) {
                 setSelectedStation(null);
+                // Re-fetch stations when the sheet is closed, as data might have changed
+                // This is a simple way to sync state after dashboard edits.
+                fetchStations();
             }
         }}
       />
