@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CalendarIcon, Wand2, Loader2, ServerCrash, Sparkles } from 'lucide-react';
-import { format, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { getStationRecommendation } from '@/ai/flows/station-recommendation-tool';
 import type { StationRecommendationOutput } from '@/ai/flows/station-recommendation-tool';
 
@@ -35,9 +35,8 @@ import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   date: z.date({
-    required_error: 'A date is required.',
+    required_error: 'A date and time is required.',
   }),
-  time: z.string().min(1, 'A time is required.'),
   connectorType: z.enum(['Tesla', 'CCS', 'Type 2', 'CHAdeMO']),
 });
 
@@ -50,7 +49,6 @@ export default function RecommendationTool() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date(),
-      time: format(new Date(), 'HH:mm'),
       connectorType: 'CCS',
     },
   });
@@ -61,15 +59,10 @@ export default function RecommendationTool() {
     setResult(null);
 
     try {
-      const { date, time } = values;
-      const [hours, minutes] = time.split(':');
-      const combinedDateTime = new Date(date);
-      combinedDateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
-
       const input = {
         latitude: 18.5204, // Pune
         longitude: 73.8567,
-        time: combinedDateTime.toISOString(),
+        time: values.date.toISOString(),
         connectorType: values.connectorType,
       };
       const recommendation = await getStationRecommendation(input);
@@ -80,6 +73,14 @@ export default function RecommendationTool() {
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value;
+    const [hours, minutes] = time.split(':').map(Number);
+    const newDate = new Date(form.getValues('date'));
+    newDate.setHours(hours, minutes);
+    form.setValue('date', newDate, { shouldValidate: true });
   }
 
   return (
@@ -112,20 +113,23 @@ export default function RecommendationTool() {
                         <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={field.onChange}
+                        onSelect={(date) => {
+                            if (date) {
+                                const newDate = new Date(field.value);
+                                newDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                                field.onChange(newDate);
+                            }
+                        }}
                         disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                         initialFocus
                         />
                     </PopoverContent>
                     </Popover>
-                    <FormField
-                        control={form.control}
-                        name="time"
-                        render={({ field: timeField }) => (
-                            <FormControl>
-                                <Input type="time" {...timeField} className="w-[120px]" />
-                            </FormControl>
-                        )}
+                    <Input 
+                        type="time" 
+                        value={format(field.value, 'HH:mm')}
+                        onChange={handleTimeChange}
+                        className="w-[120px]" 
                     />
                 </div>
                 <FormMessage />
@@ -163,9 +167,11 @@ export default function RecommendationTool() {
             {loading ? (
               <Loader2 className="animate-spin" />
             ) : (
-              <Wand2 className="mr-2 h-4 w-4" />
+              <>
+                <Wand2 className="mr-2 h-4 w-4" />
+                Find Best Station
+              </>
             )}
-            Find Best Station
           </Button>
         </form>
       </Form>
