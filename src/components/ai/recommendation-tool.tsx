@@ -86,7 +86,7 @@ export default function RecommendationTool() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6 max-w-md mx-auto">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Date & Time */}
@@ -96,7 +96,7 @@ export default function RecommendationTool() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Charging Date & Time</FormLabel>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <div className="flex flex-col sm:flex-row gap-2">
                   {/* Calendar Picker */}
                   <Popover>
                     <PopoverTrigger asChild>
@@ -104,7 +104,7 @@ export default function RecommendationTool() {
                         <Button
                           variant={'outline'}
                           className={cn(
-                            'w-full sm:w-[240px] justify-start text-left font-normal',
+                            'w-full justify-start text-left font-normal',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
@@ -135,7 +135,7 @@ export default function RecommendationTool() {
                   {/* Time Picker */}
                   <Input
                     type="time"
-                    value={field.value ? field.value.toISOString().slice(11, 16) : ''}
+                    value={field.value ? field.value.toTimeString().slice(0, 5) : ''}
                     onChange={handleTimeChange}
                     className="w-full sm:w-auto"
                   />
