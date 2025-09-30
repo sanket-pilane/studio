@@ -23,7 +23,7 @@ const StationRecommendationInputSchema = z.object({
     .describe('The longitude of the user.'),
   time: z
     .string()
-    .describe('The time the user wants to charge, in ISO format.'),
+    .describe('The time the user wants to charge, in ISO 8601 format.'),
   connectorType: z
     .string()
     .describe('The type of connector the user needs (e.g., Tesla, CCS).'),
@@ -53,22 +53,24 @@ const stationRecommendationPrompt = ai.definePrompt({
   input: {
     schema: z.object({
       ...StationRecommendationInputSchema.shape,
-      stations: z.string().describe("JSON string of available stations.")
+      stations: z.string().describe("JSON string of available stations."),
+      currentTime: z.string().describe("The current time in ISO 8601 format, for context."),
     }),
   },
   output: {
     schema: StationRecommendationOutputSchema,
   },
-  prompt: `Based on the user's location (latitude: {{{latitude}}}, longitude: {{{longitude}}}),
+  prompt: `You are an expert EV charging station recommender.
+Based on the user's location (latitude: {{{latitude}}}, longitude: {{{longitude}}}),
 the time they want to charge ({{{time}}}), and their connector type ({{{connectorType}}}),
 recommend the best EV charging station for them from the following list of available stations:
 
 {{{stations}}}
 
-Consider historical booking trends and real-time availability data.
-Explain your reasoning for recommending this station.
+The current time is {{{currentTime}}}. Consider the user's desired time, current availability, distance, and station ratings.
+Provide a concise, user-friendly reason for your recommendation.
 
-Return the station name and the reason for the recommendation.`,
+Return only the station name and the reason.`,
 });
 
 const stationRecommendationFlow = ai.defineFlow(
@@ -81,13 +83,19 @@ const stationRecommendationFlow = ai.defineFlow(
     const stations = await getStations();
     const stationsJson = JSON.stringify(stations.map(s => ({
         name: s.name,
+        address: s.address,
         availableChargers: s.availableChargers,
         totalChargers: s.totalChargers,
         connectors: s.connectors.map(c => c.type),
-        rating: s.rating
+        rating: s.rating,
+        coordinates: s.coordinates,
     })));
 
-    const {output} = await stationRecommendationPrompt({ ...input, stations: stationsJson });
+    const {output} = await stationRecommendationPrompt({ 
+      ...input, 
+      stations: stationsJson,
+      currentTime: new Date().toISOString(),
+    });
     return output!;
   }
 );
