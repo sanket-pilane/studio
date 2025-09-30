@@ -24,6 +24,7 @@ import {
   deleteDoc,
   writeBatch,
   getDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 
@@ -95,27 +96,48 @@ const initialStations: Omit<Station, "id">[] = [
   },
 ];
 
-async function seedInitialStations(): Promise<Station[]> {
-  console.log("Seeding initial stations into Firestore...");
-  const batch = writeBatch(db);
-  const seededStations: Station[] = [];
+async function seedInitialStations(): Promise<void> {
+    console.log("Attempting to seed initial stations...");
+    const metadataRef = doc(db, 'metadata', 'stations');
 
-  for (const stationData of initialStations) {
-    const docRef = doc(stationsCollection); // Auto-generate ID
-    batch.set(docRef, stationData);
-    seededStations.push({ ...stationData, id: docRef.id });
-  }
+    try {
+        await runTransaction(db, async (transaction) => {
+            const metadataDoc = await transaction.get(metadataRef);
 
-  await batch.commit();
-  console.log("Seeding complete.");
-  return seededStations;
+            if (metadataDoc.exists() && metadataDoc.data().seeded) {
+                console.log("Stations already seeded. Skipping.");
+                return;
+            }
+
+            console.log("Seeding initial stations into Firestore...");
+            for (const stationData of initialStations) {
+                const docRef = doc(stationsCollection); // Auto-generate ID
+                transaction.set(docRef, stationData);
+            }
+
+            // Set the seeded flag
+            transaction.set(metadataRef, { seeded: true });
+            console.log("Seeding complete and metadata flag set.");
+        });
+    } catch (error) {
+        console.error("Error during seeding transaction: ", error);
+        // If the transaction fails, it will automatically roll back.
+    }
 }
+
 
 export async function getStations(): Promise<Station[]> {
   const snapshot = await getDocs(stationsCollection);
   if (snapshot.empty) {
     // If the database is empty, seed it with initial data
-    return await seedInitialStations();
+    await seedInitialStations();
+    // Fetch again after seeding
+    const afterSeedSnapshot = await getDocs(stationsCollection);
+    const stations: Station[] = [];
+    afterSeedSnapshot.forEach((doc) => {
+      stations.push({ id: doc.id, ...doc.data() } as Station);
+    });
+    return stations;
   }
 
   const stations: Station[] = [];
