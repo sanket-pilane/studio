@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -52,7 +51,7 @@ export default function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/30 backdrop-blur-lg">
       <div className="container flex h-16 items-center px-4 md:px-8">
         <Link href="/" className="mr-6 flex items-center gap-2">
           <Logo className="h-6 w-6 text-primary" />

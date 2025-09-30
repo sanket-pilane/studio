@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -121,7 +120,7 @@ export default function DashboardPage() {
         {loadingData ? <Loader2 className="h-8 w-8 animate-spin text-primary"/> : (
             <>
                 <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4 mb-8">
-                <Card>
+                <Card className="animate-fade-in-up">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Stations</CardTitle>
                     <Activity className="h-4 w-4 text-muted-foreground" />
@@ -131,7 +130,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">Manage all charging locations</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="animate-fade-in-up [animation-delay:100ms]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Current Availability</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
@@ -141,7 +140,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">{totalAvailability} / {totalChargers} chargers free</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="animate-fade-in-up [animation-delay:200ms]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -151,7 +150,7 @@ export default function DashboardPage() {
                     <p className="text-xs text-muted-foreground">+19% from last month</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="animate-fade-in-up [animation-delay:300ms]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
                     <Activity className="h-4 w-4 text-muted-foreground" />
@@ -164,7 +163,7 @@ export default function DashboardPage() {
                 </div>
 
 
-                <Card>
+                <Card className="animate-fade-in-up [animation-delay:400ms]">
                     <CardHeader>
                         <CardTitle>Station Management</CardTitle>
                         <CardDescription>View, edit, or update your station information.</CardDescription>
