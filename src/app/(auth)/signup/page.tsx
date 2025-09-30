@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from 'next/navigation';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -20,18 +21,27 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { signup, user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && user) {
+        router.push('/');
+    }
+  }, [user, authLoading, router]);
+
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signup(email, password, fullName);
+      // The useEffect will handle the redirect
     } catch (error: any) {
        toast({
         variant: 'destructive',
@@ -41,6 +51,14 @@ export default function SignupPage() {
       setLoading(false);
     }
   }
+
+  if (authLoading || user) {
+    return (
+     <div className="flex items-center justify-center h-screen">
+         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+     </div>
+   );
+ }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] px-4">
