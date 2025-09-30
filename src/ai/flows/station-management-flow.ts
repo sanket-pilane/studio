@@ -10,7 +10,7 @@
 
 import { StationSchema, RefinedStationSchema } from '@/lib/zod-schemas';
 import type { Station } from '@/lib/types';
-import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, deleteDoc, writeBatch, getDoc } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 
 const db = getFirestore(app);
@@ -124,7 +124,6 @@ export async function updateStation(
   stationId: string,
   stationData: Partial<Omit<Station, 'id'>>
 ): Promise<{ id: string }> {
-    // We need to fetch the existing station to properly validate the update
     const stationRef = doc(db, 'stations', stationId);
     const stationSnap = await getDoc(stationRef);
     if (!stationSnap.exists()) {
@@ -132,15 +131,24 @@ export async function updateStation(
     }
     const existingStation = stationSnap.data();
 
-    // Create a temporary object for validation
+    // Create a temporary object for validation that includes all required fields
     const dataToValidate = {
         ...existingStation,
         ...stationData,
+        id: stationId, // Add id to satisfy the full schema before parsing
     };
     
-    const validatedData = RefinedStationSchema.omit({id: true}).partial().parse(dataToValidate);
+    // Use the refined schema to validate the complete object
+    const validatedFullObject = RefinedStationSchema.parse(dataToValidate);
 
-    await updateDoc(stationRef, validatedData);
+    // Remove the id from the validated object before updating Firestore
+    const { id, ...updateData } = validatedFullObject;
+    
+    // Since stationData is partial, we should only update the fields that were passed.
+    const finalUpdateData = StationSchema.omit({ id: true }).partial().parse(stationData);
+
+
+    await updateDoc(stationRef, finalUpdateData);
     return { id: stationId };
 }
 
