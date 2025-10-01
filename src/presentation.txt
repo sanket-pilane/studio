@@ -1,0 +1,83 @@
+### ChargeSpot Navigator: Presentation Script
+
+---
+
+#### Slide 1: Title Slide
+
+**Title:** ChargeSpot Navigator: AI-Powered EV Charging
+**Subtitle:** Finding Your Next Charge, Intelligently.
+**Presenter:** [Your Name]
+
+---
+
+#### Slide 2: Introduction - The Problem & The Solution
+
+**(Script):**
+"Good morning/afternoon, everyone. As electric vehicles become more common, the challenge of finding a convenient and available charging station grows. Drivers often face uncertainty: Is a station occupied? Is it compatible with my car? Is there a better option nearby?
+
+This is the problem ChargeSpot Navigator solves. It's a smart, modern web application designed to help EV drivers find the perfect charging station with confidence and ease."
+
+---
+
+#### Slide 3: Core Features
+
+**(Script):**
+"ChargeSpot Navigator is built around a few core features to create a seamless experience:
+
+1.  **Interactive Map:** At its heart is a fast, responsive map powered by Google Maps, showing all nearby charging stations.
+2.  **AI Station Finder:** This is our standout feature. Using Genkit, Google's generative AI toolkit, our AI assistant recommends the best station based on the user's location, desired time, and connector type.
+3.  **Real-Time Data & Booking:** Users can see live availability and book a charging slot directly, eliminating uncertainty.
+4.  **User Authentication & Profiles:** Secure user accounts are managed by Firebase Authentication, and users can view their booking history in their profile.
+5.  **Admin Dashboard:** We also have a complete dashboard for station operators to manage their locations in real-time."
+
+---
+
+#### Slide 4: Technology Stack - The Foundation
+
+**(Script):**
+"To build this, we used a cutting-edge, integrated tech stack.
+
+*   **Framework:** **Next.js** with the App Router. This gives us the power of React with server-side rendering for fast performance and great SEO.
+*   **UI:** A combination of **ShadCN/UI** for pre-built, accessible components and **Tailwind CSS** for rapid, custom styling. This creates a modern and clean look.
+*   **Mapping:** The **Google Maps Platform** is used for all mapping, markers, and directions.
+*   **Database & Auth:** **Firebase** is the backbone of our backend. We use **Firestore** as our real-time NoSQL database for stations and bookings, and **Firebase Authentication** for secure user management."
+
+---
+
+#### Slide 5: The "Magic" - Generative AI with Genkit
+
+**(Script):**
+"The AI Station Finder is powered by **Genkit**, a new open-source framework from Google for building AI-powered features.
+
+Here's how it works:
+1.  The user provides their requirements: desired time and connector type.
+2.  The app sends this, along with the user's location and a list of all available stations from our Firestore database, to a Genkit 'flow'.
+3.  This flow runs a prompt on a Large Language Model (LLM) like Gemini.
+4.  The prompt asks the AI to act as an expert recommender, analyzing all the data—distance, current availability, time, and ratings—to determine the single best option.
+5.  The AI returns not just the station name, but also a user-friendly reason for its choice, which we display to the user.
+
+This turns a simple data lookup into a personalized, intelligent recommendation."
+
+---
+
+#### Slide 6: Application Architecture
+
+**(Script):**
+"Let's look at how it all fits together.
+
+*   **Frontend (The Browser):** The user interacts with our **Next.js/React** application. Components built with **ShadCN/UI** and styled with **Tailwind CSS** make up the interface.
+*   **Backend (The Cloud):**
+    *   **Firebase** handles all our data. User actions like logging in, booking a spot, or updating a profile directly interact with Firebase Auth and Firestore.
+    *   **Genkit Flows**, which are server-side TypeScript functions, contain our AI logic. When the user requests an AI recommendation, the Next.js frontend calls these flows.
+*   **AI (The Model):** The Genkit flow communicates with the **Gemini model** via an API, sending the structured prompt and receiving the formatted recommendation.
+
+This architecture is robust, scalable, and allows us to seamlessly integrate powerful AI features directly into our web application."
+
+---
+
+#### Slide 7: Conclusion & Q&A
+
+**(Script):**
+"In summary, ChargeSpot Navigator is more than just a map. It's an intelligent assistant for EV drivers, built on a modern, powerful, and integrated technology stack. By combining Next.js, Firebase, and Genkit, we've created a user-friendly application that solves a real-world problem.
+
+Thank you. I'm now happy to answer any questions you may have."
