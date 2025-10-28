@@ -195,7 +195,9 @@ export default function StationFormDialog({ isOpen, onOpenChange, onStationSaved
                                             <SelectContent>
                                                 <SelectItem value="Tesla">Tesla</SelectItem>
                                                 <SelectItem value="CCS">CCS</SelectItem>
+                                                <SelectItem value="CCS2">CCS2</SelectItem>
                                                 <SelectItem value="Type 2">Type 2</SelectItem>
+                                                <SelectItem value="Type-2 AC">Type-2 AC</SelectItem>
                                                 <SelectItem value="CHAdeMO">CHAdeMO</SelectItem>
                                             </SelectContent>
                                         </Select>

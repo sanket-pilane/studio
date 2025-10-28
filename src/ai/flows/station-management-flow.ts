@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Manages charging station data in Firestore.
@@ -33,67 +34,68 @@ const stationsCollection = collection(db, "stations");
 
 const initialStations: Omit<Station, "id">[] = [
   {
-    name: "Koregaon Park Charge-Up",
-    address: "Lane 7, Koregaon Park, Pune",
-    coordinates: { lat: 18.536, lng: 73.893 },
+    name: "JW Marriott Pune",
+    address: "Senapati Bapat Rd, Shivajinagar, Pune, Maharashtra 411053",
+    coordinates: { lat: 18.5303, lng: 73.8344 },
     connectors: [
-      { type: "CCS", speed: 50 },
-      { type: "CHAdeMO", speed: 40 },
+      { type: "CCS2", speed: 60 },
+      { type: "Type-2 AC", speed: 7.4 }
     ],
-    price: 18,
-    totalChargers: 4,
-    availableChargers: 2,
-    rating: 4.7,
-  },
-  {
-    name: "Hinjewadi IT Park Superchargers",
-    address: "Phase 1, Hinjewadi Rajiv Gandhi Infotech Park, Pune",
-    coordinates: { lat: 18.591, lng: 73.738 },
-    connectors: [
-      { type: "Tesla", speed: 150 },
-      { type: "Type 2", speed: 22 },
-    ],
-    price: 20,
-    totalChargers: 8,
-    availableChargers: 8,
-    rating: 4.9,
-  },
-  {
-    name: "Viman Nagar Power Point",
-    address: "Near Phoenix Marketcity, Viman Nagar, Pune",
-    coordinates: { lat: 18.563, lng: 73.918 },
-    connectors: [
-      { type: "CCS", speed: 100 },
-      { type: "Type 2", speed: 22 },
-    ],
-    price: 17,
-    totalChargers: 6,
-    availableChargers: 5,
-    rating: 4.6,
-  },
-  {
-    name: "Pune Airport E-Boost",
-    address: "Pune International Airport, Lohegaon",
-    coordinates: { lat: 18.579, lng: 73.909 },
-    connectors: [{ type: "CCS", speed: 50 }],
-    price: 22,
-    totalChargers: 2,
+    price: 19.5,
+    totalChargers: 3,
     availableChargers: 1,
-    rating: 4.4,
+    rating: 4.5
   },
   {
-    name: "Baner-Balewadi Juice Stop",
-    address: "High Street, Balewadi, Pune",
-    coordinates: { lat: 18.57, lng: 73.774 },
+    name: "Westend Mall Statiq Station",
+    address: "1st Floor Parking, Parihar Chowk, Aundh, Pune, Maharashtra 411007",
+    coordinates: { lat: 18.5678, lng: 73.8015 },
     connectors: [
-      { type: "Type 2", speed: 22 },
-      { type: "CCS", speed: 50 },
+      { type: "CCS2", speed: 50 },
+      { type: "CHAdeMO", speed: 50 }
     ],
-    price: 19,
-    totalChargers: 5,
+    price: 18.0,
+    totalChargers: 4,
     availableChargers: 3,
-    rating: 4.8,
+    rating: 4.7
   },
+  {
+    name: "TML Panchjanya Motors",
+    address: "Block D2, Chinchwad East, Pimpri-Chinchwad, Maharashtra 411019",
+    coordinates: { lat: 18.6508, lng: 73.8052 },
+    connectors: [
+      { type: "CCS2", speed: 25 },
+      { type: "Type-2 AC", speed: 3.3 }
+    ],
+    price: 15.0,
+    totalChargers: 4,
+    availableChargers: 0,
+    rating: 4.1
+  },
+  {
+    name: "Amanora Park Town ChargeGrid",
+    address: "Magarpatta Road, Hadapsar, Pune, Maharashtra 411028",
+    coordinates: { lat: 18.5262, lng: 73.9478 },
+    connectors: [
+      { type: "CCS2", speed: 50 }
+    ],
+    price: 17.5,
+    totalChargers: 1,
+    availableChargers: 1,
+    rating: 4.8
+  },
+  {
+    name: "PMC - Ganesh Kala Krida Manch",
+    address: "Swargate, Shukrawar Peth, Pune, Maharashtra 411042",
+    coordinates: { lat: 18.5085, lng: 73.8569 },
+    connectors: [
+      { type: "Type-2 AC", speed: 7.4 }
+    ],
+    price: 14.0,
+    totalChargers: 2,
+    availableChargers: 2,
+    rating: 3.9
+  }
 ];
 
 async function seedInitialStations(): Promise<void> {

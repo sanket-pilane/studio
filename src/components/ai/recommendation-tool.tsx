@@ -35,7 +35,7 @@ const formSchema = z.object({
   date: z.date({
     required_error: 'A date and time is required.',
   }),
-  connectorType: z.enum(['Tesla', 'CCS', 'Type 2', 'CHAdeMO']),
+  connectorType: z.enum(['Tesla', 'CCS', 'Type 2', 'CHAdeMO', 'CCS2', 'Type-2 AC']),
 });
 
 export default function RecommendationTool() {
@@ -107,7 +107,7 @@ export default function RecommendationTool() {
               <FormItem className="flex flex-col min-w-0">
                 <FormLabel>Charging Date & Time</FormLabel>
 
-                <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-col gap-2 min-w-0">
+                <div className="flex flex-row gap-2 min-w-0">
                   {/* Calendar Picker */}
                   <Popover>
                     <PopoverTrigger asChild>
@@ -115,7 +115,7 @@ export default function RecommendationTool() {
                         <Button
                           variant={'outline'}
                           className={cn(
-                            'w-full sm:w-[220px] min-w-0 justify-start text-left font-normal',
+                            'w-full justify-start text-left font-normal',
                             !field.value && 'text-muted-foreground'
                           )}
                         >
@@ -198,7 +198,9 @@ export default function RecommendationTool() {
                   <SelectContent>
                     <SelectItem value="Tesla">Tesla</SelectItem>
                     <SelectItem value="CCS">CCS</SelectItem>
+                    <SelectItem value="CCS2">CCS2</SelectItem>
                     <SelectItem value="Type 2">Type 2</SelectItem>
+                    <SelectItem value="Type-2 AC">Type-2 AC</SelectItem>
                     <SelectItem value="CHAdeMO">CHAdeMO</SelectItem>
                   </SelectContent>
                 </Select>

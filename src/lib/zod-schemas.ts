@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ConnectorSchema = z.object({
-  type: z.enum(["Tesla", "CCS", "Type 2", "CHAdeMO"]),
+  type: z.enum(["Tesla", "CCS", "Type 2", "CHAdeMO", "CCS2", "Type-2 AC"]),
   speed: z.number().positive(),
 });
 

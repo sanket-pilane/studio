@@ -1,6 +1,6 @@
 
 export type Connector = {
-  type: 'Tesla' | 'CCS' | 'Type 2' | 'CHAdeMO';
+  type: 'Tesla' | 'CCS' | 'Type 2' | 'CHAdeMO' | 'CCS2' | 'Type-2 AC';
   speed: number; // in kW
 };
 
