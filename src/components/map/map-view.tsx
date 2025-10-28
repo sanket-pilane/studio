@@ -5,7 +5,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   APIProvider,
   Map,
-  AdvancedMarker,
 } from '@vis.gl/react-google-maps';
 import { getStations } from '@/ai/flows/station-management-flow';
 import type { Station } from '@/lib/types';
@@ -13,6 +12,7 @@ import StationDetailSheet from './station-detail-sheet';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import CustomMarker from './custom-marker';
+import UserMarker from './user-marker';
 
 const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
@@ -21,6 +21,8 @@ export default function MapView() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<google.maps.LatLngLiteral | null>(null);
+  const [center, setCenter] = useState(PUNE_CENTER);
 
   const fetchStations = useCallback(async () => {
     try {
@@ -37,6 +39,24 @@ export default function MapView() {
 
   useEffect(() => {
     fetchStations();
+    
+    // Get user's location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserPosition(pos);
+          setCenter(pos);
+        },
+        () => {
+          // Handle location error (e.g., user denied permission)
+          console.warn("User denied location access.");
+        }
+      );
+    }
   }, [fetchStations]);
 
   if (!apiKey) {
@@ -57,9 +77,11 @@ export default function MapView() {
     <div className="h-full w-full rounded-lg overflow-hidden shadow-lg relative">
       <APIProvider apiKey={apiKey}>
         <Map
-          defaultCenter={PUNE_CENTER}
+          center={center}
           defaultZoom={12}
           mapId="chargerspot_map"
+          disableDefaultUI={false}
+          gestureHandling={'auto'}
         >
           {!loading && stations.map((station) => (
             <CustomMarker
@@ -68,6 +90,7 @@ export default function MapView() {
               onClick={() => setSelectedStation(station)}
             />
           ))}
+          {userPosition && <UserMarker position={userPosition} />}
         </Map>
       </APIProvider>
       
@@ -82,8 +105,6 @@ export default function MapView() {
         onOpenChange={(isOpen) => {
             if (!isOpen) {
                 setSelectedStation(null);
-                // Re-fetch stations when the sheet is closed, as data might have changed
-                // This is a simple way to sync state after dashboard edits.
                 fetchStations();
             }
         }}
