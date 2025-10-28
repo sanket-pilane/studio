@@ -87,7 +87,6 @@ export default function MapView() {
           center={mapCenter}
           defaultZoom={12}
           mapId="chargerspot_map"
-          gestureHandling={'greedy'}
           disableDefaultUI={true}
         >
           {userPosition && (
