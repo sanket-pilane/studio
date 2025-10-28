@@ -16,21 +16,11 @@ import CustomMarker from './custom-marker';
 
 const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
-// A simple component for the user's location marker
-const UserLocationMarker = () => (
-    <div className="relative w-4 h-4">
-        <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping"></div>
-        <div className="relative w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>
-    </div>
-);
-
-
 export default function MapView() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
 
   const fetchStations = useCallback(async () => {
     try {
@@ -39,6 +29,7 @@ export default function MapView() {
       setStations(stationsData);
     } catch (error) {
       console.error("Failed to fetch stations:", error);
+      // Optionally show a toast or error message to the user
     } finally {
       setLoading(false);
     }
@@ -46,22 +37,6 @@ export default function MapView() {
 
   useEffect(() => {
     fetchStations();
-    
-    // Get user's current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserPosition({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.warn(`Geolocation error: ${error.message}. Defaulting to Pune.`);
-          // App continues to work even if permission is denied
-        }
-      );
-    }
   }, [fetchStations]);
 
   if (!apiKey) {
@@ -78,26 +53,18 @@ export default function MapView() {
     );
   }
 
-  const mapCenter = userPosition || PUNE_CENTER;
-
   return (
     <div className="h-full w-full rounded-lg overflow-hidden shadow-lg relative">
       <APIProvider apiKey={apiKey}>
         <Map
-          center={mapCenter}
+          defaultCenter={PUNE_CENTER}
           defaultZoom={12}
           mapId="chargerspot_map"
         >
-          {userPosition && (
-              <AdvancedMarker position={userPosition}>
-                  <UserLocationMarker/>
-              </AdvancedMarker>
-          )}
-
           {!loading && stations.map((station) => (
-            <CustomMarker 
-              key={station.id} 
-              station={station} 
+            <CustomMarker
+              key={station.id}
+              station={station}
               onClick={() => setSelectedStation(station)}
             />
           ))}
@@ -115,6 +82,8 @@ export default function MapView() {
         onOpenChange={(isOpen) => {
             if (!isOpen) {
                 setSelectedStation(null);
+                // Re-fetch stations when the sheet is closed, as data might have changed
+                // This is a simple way to sync state after dashboard edits.
                 fetchStations();
             }
         }}
