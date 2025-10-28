@@ -5,14 +5,13 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   APIProvider,
   Map,
-  AdvancedMarker,
-  Pin,
 } from '@vis.gl/react-google-maps';
 import { getStations } from '@/ai/flows/station-management-flow';
 import type { Station } from '@/lib/types';
 import StationDetailSheet from './station-detail-sheet';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import CustomMarker from './custom-marker';
 
 const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
@@ -29,7 +28,6 @@ export default function MapView() {
       setStations(stationsData);
     } catch (error) {
       console.error("Failed to fetch stations:", error);
-      // Optionally show a toast or error message to the user
     } finally {
       setLoading(false);
     }
@@ -64,17 +62,11 @@ export default function MapView() {
           disableDefaultUI={true}
         >
           {!loading && stations.map((station) => (
-            <AdvancedMarker
-              key={station.id}
-              position={station.coordinates}
+            <CustomMarker 
+              key={station.id} 
+              station={station} 
               onClick={() => setSelectedStation(station)}
-            >
-              <Pin
-                background={'hsl(var(--primary))'}
-                borderColor={'hsl(var(--primary-foreground))'}
-                glyphColor={'hsl(var(--primary-foreground))'}
-              />
-            </AdvancedMarker>
+            />
           ))}
         </Map>
       </APIProvider>
@@ -90,8 +82,6 @@ export default function MapView() {
         onOpenChange={(isOpen) => {
             if (!isOpen) {
                 setSelectedStation(null);
-                // Re-fetch stations when the sheet is closed, as data might have changed
-                // This is a simple way to sync state after dashboard edits.
                 fetchStations();
             }
         }}
