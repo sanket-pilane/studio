@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { CalendarIcon, Wand2, Loader2, ServerCrash, Sparkles } from 'lucide-react';
+import { CalendarIcon, Wand2, Loader2, ServerCrash, Sparkles, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { getStationRecommendation } from '@/ai/flows/station-recommendation-tool';
 import type { StationRecommendationOutput } from '@/ai/flows/station-recommendation-tool';
@@ -40,6 +41,7 @@ const formSchema = z.object({
 
 export default function RecommendationTool() {
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StationRecommendationOutput | null>(null);
 
@@ -51,25 +53,50 @@ export default function RecommendationTool() {
     },
   });
 
+  const getUserLocation = (): Promise<{ latitude: number; longitude: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by your browser.'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        () => {
+          reject(new Error('Location access denied. Please enable location services.'));
+        }
+      );
+    });
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
+      setLoadingMessage('Getting location...');
+      const { latitude, longitude } = await getUserLocation();
+
+      setLoadingMessage('Thinking...');
       const input = {
-        latitude: 18.5204, // Pune
-        longitude: 73.8567,
+        latitude,
+        longitude,
         time: values.date.toISOString(),
         connectorType: values.connectorType,
       };
       const recommendation = await getStationRecommendation(input);
       setResult(recommendation);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      setError('Failed to get recommendation. Please try again.');
+      setError(e.message || 'Failed to get recommendation. Please try again.');
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   }
 
@@ -227,7 +254,7 @@ export default function RecommendationTool() {
       {loading && (
         <div className="flex items-center justify-center text-sm text-muted-foreground">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Thinking...
+          {loadingMessage}
         </div>
       )}
 
