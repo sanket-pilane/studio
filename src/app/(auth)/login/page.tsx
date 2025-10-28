@@ -58,15 +58,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] px-4">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm bg-background/80 backdrop-blur-sm">
         <CardHeader className="text-center">
-            <div className="flex justify-center mb-2">
-                <Logo className="h-10 w-10 text-primary"/>
+            <div className="flex justify-center mb-4">
+                <Logo className="h-12 w-12 text-primary"/>
             </div>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account. <br/>
-            Admin: admin@example.com / password
+            Enter your email to sign in to your account. <br/>
+            (Admin: admin@example.com / password)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,9 +103,6 @@ export default function LoginPage() {
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin"/> : 'Login'}
-              </Button>
-              <Button variant="outline" className="w-full">
-                Login with Google
               </Button>
             </div>
           </form>

@@ -26,7 +26,6 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col bg-background')} suppressHydrationWarning>
-         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-gray-900 via-gray-900 to-purple-900/50 -z-10" />
         <AuthProvider>
           <Header />
           <main className="flex-grow">{children}</main>

@@ -62,14 +62,14 @@ export default function SignupPage() {
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-10rem)] px-4">
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm bg-background/80 backdrop-blur-sm">
       <CardHeader className="text-center">
-        <div className="flex justify-center mb-2">
-            <Logo className="h-10 w-10 text-primary"/>
+        <div className="flex justify-center mb-4">
+            <Logo className="h-12 w-12 text-primary"/>
         </div>
-        <CardTitle className="text-2xl">Sign Up</CardTitle>
+        <CardTitle className="text-3xl font-bold">Create an Account</CardTitle>
         <CardDescription>
-          Create an account to start finding charging spots.
+          Get started with ChargeSpot Navigator today.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -108,9 +108,6 @@ export default function SignupPage() {
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? <Loader2 className="animate-spin"/> : 'Create an account'}
-            </Button>
-            <Button variant="outline" className="w-full">
-              Sign up with Google
             </Button>
           </div>
         </form>

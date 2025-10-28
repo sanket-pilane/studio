@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MoreHorizontal, PlusCircle, Loader2, Activity, Users, DollarSign, Trash2, Edit } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Loader2, Zap, Users, DollarSign, Trash2, Edit, CheckCircle2, XCircle } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -106,7 +106,7 @@ export default function DashboardPage() {
 
     const totalAvailability = stations.reduce((acc, station) => acc + station.availableChargers, 0);
     const totalChargers = stations.reduce((acc, station) => acc + station.totalChargers, 0);
-    const availabilityPercentage = totalChargers > 0 ? (totalAvailability / totalChargers * 100).toFixed(0) : 0;
+    const availabilityPercentage = totalChargers > 0 ? Math.round((totalAvailability / totalChargers) * 100) : 0;
   
     return (
     <div className="container mx-auto p-4 md:p-8">
@@ -117,47 +117,37 @@ export default function DashboardPage() {
             </Button>
         </div>
         
-        {loadingData ? <Loader2 className="h-8 w-8 animate-spin text-primary"/> : (
+        {loadingData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : (
             <>
-                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4 mb-8">
+                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 mb-8">
                 <Card className="animate-fade-in-up">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Stations</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                     <div className="text-2xl font-bold">{stations.length}</div>
-                    <p className="text-xs text-muted-foreground">Manage all charging locations</p>
+                    <p className="text-xs text-muted-foreground">stations currently online</p>
                     </CardContent>
                 </Card>
                 <Card className="animate-fade-in-up [animation-delay:100ms]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Current Availability</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className="text-sm font-medium">Charger Availability</CardTitle>
+                    <Zap className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                     <div className="text-2xl font-bold">{availabilityPercentage}%</div>
-                    <p className="text-xs text-muted-foreground">{totalAvailability} / {totalChargers} chargers free</p>
+                    <p className="text-xs text-muted-foreground">{totalAvailability} of {totalChargers} chargers free</p>
                     </CardContent>
                 </Card>
                 <Card className="animate-fade-in-up [animation-delay:200ms]">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                    <div className="text-2xl font-bold">$4,231.89</div>
-                    <p className="text-xs text-muted-foreground">+19% from last month</p>
-                    </CardContent>
-                </Card>
-                <Card className="animate-fade-in-up [animation-delay:300ms]">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                     <div className="text-2xl font-bold">+{bookings.filter(b => b.status === 'Confirmed').length}</div>
-                    <p className="text-xs text-muted-foreground">Total {bookings.length} bookings</p>
+                    <p className="text-xs text-muted-foreground">out of {bookings.length} total bookings</p>
                     </CardContent>
                 </Card>
                 </div>
@@ -186,14 +176,14 @@ export default function DashboardPage() {
                                     <TableRow key={station.id}>
                                         <TableCell className="font-medium">{station.name}</TableCell>
                                         <TableCell className="hidden md:table-cell">
-                                            <Badge variant={station.availableChargers > 3 ? "secondary" : "outline"}
-                                                className={station.availableChargers > 3 ? "bg-green-100 text-green-800" : ""}
+                                             <Badge variant={station.availableChargers > 0 ? "secondary" : "outline"}
+                                                className={station.availableChargers > 0 ? "bg-green-500/20 text-green-400 border-green-500/30" : "border-red-500/30 text-red-400"}
                                             >
                                                 {station.availableChargers} / {station.totalChargers}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">${station.price}/kWh</TableCell>
-                                        <TableCell className="hidden sm:table-cell">{station.rating}/5.0</TableCell>
+                                        <TableCell className="hidden md:table-cell">${station.price.toFixed(2)}/kWh</TableCell>
+                                        <TableCell className="hidden sm:table-cell">{station.rating.toFixed(1)}/5.0</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -241,7 +231,7 @@ export default function DashboardPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteStation}>Continue</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteStation} className="bg-destructive hover:bg-destructive/90">Continue</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
