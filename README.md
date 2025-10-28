@@ -9,12 +9,13 @@ Welcome to **ChargeSpot Navigator**, your smart guide to finding the best spot t
 
 ## ✨ What Does It Do? (Features)
 
-- **Find Stations on a Map**: See all nearby charging stations on a live, interactive map.
-- **Get Smart Recommendations**: Ask our AI assistant to find the best station for you. It considers your location, the time, and your car's needs to give you a personalized recommendation.
-- **See Live Availability**: Check how many chargers are free at a station before you go.
+- **Live Interactive Map**: See all nearby charging stations on a responsive map. The app requests your location to center the map and displays your position with a distinct marker.
+- **AI-Powered Recommendations**: Ask our AI assistant to find the best station for you. It uses your **live location**, desired time, and vehicle's connector type to give you a personalized recommendation.
+- **Real-Time Station Details**: Custom map markers show live availability at a glance. Hover over a station to see its rating, price, and how many chargers are free.
 - **Book Your Spot**: Reserve a charging spot right from the app so it's waiting for you when you arrive.
-- **Manage Your Profile**: Create an account, save your vehicle details, and see a history of all your past bookings.
-- **Admin Tools**: A special dashboard for station owners to add and manage their charging locations.
+- **Manage Your Profile**: Create an account, save your vehicle details, and see a history of all your past and upcoming bookings.
+- **Admin Dashboard**: A special dashboard for station owners to add, edit, and manage their charging locations in real-time.
+- **Modern Dark UI**: A sleek, modern user interface with a dark theme and an "electric blue" accent for a great user experience.
 
 ---
 
