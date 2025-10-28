@@ -23,15 +23,15 @@ export default function CustomMarker({ station, onClick }: CustomMarkerProps) {
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
     >
-      <div className="relative">
+      <div className="relative animate-fade-in-up">
         <div
           className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 transform-gpu shadow-lg cursor-pointer',
-            isAvailable ? 'bg-primary' : 'bg-muted',
-            isHovered && 'scale-110'
+            'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 transform-gpu shadow-lg cursor-pointer',
+            isAvailable ? 'bg-green-500' : 'bg-muted',
+            isHovered && 'scale-110 -translate-y-1'
           )}
         >
-          <Zap className={cn('h-5 w-5', isAvailable ? 'text-primary-foreground' : 'text-muted-foreground')} />
+          <Zap className={cn('h-5 w-5', isAvailable ? 'text-white' : 'text-muted-foreground')} />
         </div>
         {isHovered && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 text-sm font-semibold text-primary-foreground bg-primary rounded-md shadow-lg whitespace-nowrap">
