@@ -89,7 +89,6 @@ export default function MapView() {
           mapId="chargerspot_map"
           gestureHandling={'greedy'}
           disableDefaultUI={true}
-          key={userPosition ? 'user-centered' : 'default-centered'} // Re-render map on center change
         >
           {userPosition && (
               <AdvancedMarker position={userPosition}>
