@@ -44,7 +44,7 @@ const initialStations: Omit<Station, "id">[] = [
     price: 19.5,
     totalChargers: 3,
     availableChargers: 1,
-    rating: 4.5
+    rating: 4.5,
   },
   {
     name: "Westend Mall Statiq Station",
