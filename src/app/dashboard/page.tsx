@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MoreHorizontal, PlusCircle, Loader2, Zap, Users, DollarSign, Trash2, Edit, CheckCircle2, XCircle } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Loader2, Zap, Users, DollarSign, Trash2, Edit, CheckCircle2, XCircle, MapPin } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
