@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   APIProvider,
   Map,
+  AdvancedMarker,
 } from '@vis.gl/react-google-maps';
 import { getStations } from '@/ai/flows/station-management-flow';
 import type { Station } from '@/lib/types';
@@ -15,11 +16,21 @@ import CustomMarker from './custom-marker';
 
 const PUNE_CENTER = { lat: 18.5204, lng: 73.8567 };
 
+// A simple component for the user's location marker
+const UserLocationMarker = () => (
+    <div className="relative w-4 h-4">
+        <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping"></div>
+        <div className="relative w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>
+    </div>
+);
+
+
 export default function MapView() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
 
   const fetchStations = useCallback(async () => {
     try {
@@ -35,6 +46,22 @@ export default function MapView() {
 
   useEffect(() => {
     fetchStations();
+    
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserPosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn(`Geolocation error: ${error.message}. Defaulting to Pune.`);
+          // App continues to work even if permission is denied
+        }
+      );
+    }
   }, [fetchStations]);
 
   if (!apiKey) {
@@ -51,16 +78,25 @@ export default function MapView() {
     );
   }
 
+  const mapCenter = userPosition || PUNE_CENTER;
+
   return (
     <div className="h-full w-full rounded-lg overflow-hidden shadow-lg relative">
       <APIProvider apiKey={apiKey}>
         <Map
-          defaultCenter={PUNE_CENTER}
+          center={mapCenter}
           defaultZoom={12}
           mapId="chargerspot_map"
           gestureHandling={'greedy'}
           disableDefaultUI={true}
+          key={userPosition ? 'user-centered' : 'default-centered'} // Re-render map on center change
         >
+          {userPosition && (
+              <AdvancedMarker position={userPosition}>
+                  <UserLocationMarker/>
+              </AdvancedMarker>
+          )}
+
           {!loading && stations.map((station) => (
             <CustomMarker 
               key={station.id} 
