@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Manages booking data in Firestore.
@@ -9,7 +8,6 @@
  * - cancelBooking: Cancels a specific booking.
  */
 
-import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { getFirestore } from 'firebase-admin/firestore';
 import { z } from 'genkit';
 import type { Booking } from '@/lib/types';
@@ -26,10 +24,10 @@ const BookingSchema = z.object({
 
 export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
   const db = getFirestore(getFirebaseAdminApp());
-  const bookingsCollection = collection(db, 'users', input.userId, 'bookings');
+  const bookingsCollection = db.collection('users').doc(input.userId).collection('bookings');
   try {
     const validatedInput = BookingSchema.parse(input);
-    const docRef = await addDoc(bookingsCollection, validatedInput);
+    const docRef = await bookingsCollection.add(validatedInput);
     return { id: docRef.id };
   } catch (e) {
     console.error("Error creating booking: ", e);
@@ -43,9 +41,9 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
     return [];
   }
   const db = getFirestore(getFirebaseAdminApp());
-  const bookingsCollection = collection(db, 'users', userId, 'bookings');
+  const bookingsCollection = db.collection('users').doc(userId).collection('bookings');
   try {
-    const querySnapshot = await getDocs(bookingsCollection);
+    const querySnapshot = await bookingsCollection.get();
     const bookings: Booking[] = [];
     querySnapshot.forEach((doc) => {
       bookings.push({ id: doc.id, ...doc.data() } as Booking);
@@ -69,9 +67,9 @@ export async function getAllBookings(): Promise<Booking[]> {
     const db = getFirestore(getFirebaseAdminApp());
     // This is inefficient. A real app would query each user's booking subcollection.
     // For this demo, we assume a simplified (and less secure) 'bookings' root collection for admins.
-    const rootBookingsCollection = collection(db, 'bookings'); 
+    const rootBookingsCollection = db.collection('bookings'); 
     try {
-        const querySnapshot = await getDocs(rootBookingsCollection);
+        const querySnapshot = await rootBookingsCollection.get();
         const bookings: Booking[] = [];
         querySnapshot.forEach((doc) => {
             bookings.push({ id: doc.id, ...doc.data() } as Booking);
@@ -88,9 +86,9 @@ export async function cancelBooking(userId: string, bookingId: string): Promise<
         throw new Error("User ID and Booking ID are required to cancel.");
     }
     const db = getFirestore(getFirebaseAdminApp());
-    const bookingRef = doc(db, 'users', userId, 'bookings', bookingId);
+    const bookingRef = db.collection('users').doc(userId).collection('bookings').doc(bookingId);
     try {
-        await updateDoc(bookingRef, {
+        await bookingRef.update({
             status: 'Cancelled'
         });
         return { id: bookingId };
