@@ -17,7 +17,6 @@ export type Station = {
   totalChargers: number;
   availableChargers: number;
   rating: number; // 1-5
-  imageUrl?: string;
 };
 
 export type Booking = {

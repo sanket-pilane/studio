@@ -1,7 +1,7 @@
 
 'use server';
 /**
- * @fileOverview Manages charging station data in Firestore.
+ * @fileOverview Manages charging station data in Firestore using the Admin SDK.
  *
  * - getStations: Retrieves all stations, seeding initial data if necessary.
  * - createStation: Creates a new station in Firestore.
@@ -16,7 +16,6 @@ import {
 } from "@/lib/zod-schemas";
 import type { Station } from "@/lib/types";
 import { getFirebaseAdminApp } from '@/firebase/server-init';
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const initialStations: Omit<Station, "id">[] = [
   {
@@ -124,17 +123,15 @@ export async function getStations(): Promise<Station[]> {
     await seedInitialStations();
     const afterSeedSnapshot = await stationsCol.get();
     const stations: Station[] = [];
-    afterSeedSnapshot.forEach((doc, index) => {
-      const image = PlaceHolderImages.length > 0 ? PlaceHolderImages[index % PlaceHolderImages.length] : undefined;
-      stations.push({ id: doc.id, ...doc.data(), imageUrl: image?.imageUrl } as Station);
+    afterSeedSnapshot.forEach((doc) => {
+      stations.push({ id: doc.id, ...doc.data() } as Station);
     });
     return stations;
   }
 
   const stations: Station[] = [];
-  snapshot.forEach((doc, index) => {
-    const image = PlaceHolderImages.length > 0 ? PlaceHolderImages[index % PlaceHolderImages.length] : undefined;
-    stations.push({ id: doc.id, ...doc.data(), imageUrl: image?.imageUrl } as Station);
+  snapshot.forEach((doc) => {
+    stations.push({ id: doc.id, ...doc.data() } as Station);
   });
   return stations;
 }

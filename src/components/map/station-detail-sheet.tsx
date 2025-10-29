@@ -21,6 +21,7 @@ import { useState } from 'react';
 import { createBooking } from '@/ai/flows/booking-flow';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type StationDetailSheetProps = {
   station: Station | null;
@@ -82,6 +83,7 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
     }
   };
 
+  const stationImage = PlaceHolderImages[0];
 
   return (
     <Sheet open={!!station} onOpenChange={onOpenChange}>
@@ -106,14 +108,14 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
                 </div>
               </SheetHeader>
               <div className="p-6 pt-0">
-                  {station.imageUrl && (
+                  {stationImage && (
                       <div className="aspect-video rounded-md overflow-hidden relative mb-4">
                           <Image
-                              src={station.imageUrl}
+                              src={stationImage.imageUrl}
                               alt={station.name}
                               fill
                               style={{objectFit: 'cover'}}
-                              data-ai-hint="charging station"
+                              data-ai-hint={stationImage.imageHint}
                           />
                       </div>
                   )}
