@@ -8,14 +8,13 @@
  * - updateStation: Updates an existing station in Firestore.
  * - deleteStation: Deletes a station from Firestore.
  */
-
+import { getFirestore } from 'firebase-admin/firestore';
 import {
   StationSchema,
   RefinedStationSchema,
   CreateStationSchema,
 } from "@/lib/zod-schemas";
 import type { Station } from "@/lib/types";
-import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/firebase/server-init';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 
@@ -126,14 +125,16 @@ export async function getStations(): Promise<Station[]> {
     const afterSeedSnapshot = await stationsCol.get();
     const stations: Station[] = [];
     afterSeedSnapshot.forEach((doc, index) => {
-      stations.push({ id: doc.id, ...doc.data(), imageUrl: PlaceHolderImages[index % PlaceHolderImages.length].imageUrl } as Station);
+      const image = PlaceHolderImages.length > 0 ? PlaceHolderImages[index % PlaceHolderImages.length] : undefined;
+      stations.push({ id: doc.id, ...doc.data(), imageUrl: image?.imageUrl } as Station);
     });
     return stations;
   }
 
   const stations: Station[] = [];
   snapshot.forEach((doc, index) => {
-    stations.push({ id: doc.id, ...doc.data(), imageUrl: PlaceHolderImages[index % PlaceHolderImages.length].imageUrl } as Station);
+    const image = PlaceHolderImages.length > 0 ? PlaceHolderImages[index % PlaceHolderImages.length] : undefined;
+    stations.push({ id: doc.id, ...doc.data(), imageUrl: image?.imageUrl } as Station);
   });
   return stations;
 }
