@@ -129,6 +129,7 @@ export async function getStations(): Promise<Station[]> {
   const db = getDb();
   const stationsCol = collection(db, 'stations');
   const snapshot = await getDocs(stationsCol);
+  
   if (snapshot.empty) {
     // If the database is empty, seed it with initial data
     await seedInitialStations();

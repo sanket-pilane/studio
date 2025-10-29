@@ -36,9 +36,11 @@ const getFirebaseAdminApp = (): App => {
     });
 };
 
+// Store the db instance to avoid re-initializing it on every call.
 let db: Firestore | null = null;
 
 export const getDb = (): Firestore => {
+  // Initialize the db instance if it hasn't been already.
   if (!db) {
     db = getFirestore(getFirebaseAdminApp());
   }
