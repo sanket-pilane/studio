@@ -10,9 +10,10 @@
  */
 
 import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { z } from 'genkit';
-import { getDb } from '@/firebase/server-init';
 import type { Booking } from '@/lib/types';
+import { getFirebaseAdminApp } from '@/firebase/server-init';
 
 const BookingSchema = z.object({
   stationId: z.string(),
@@ -24,7 +25,7 @@ const BookingSchema = z.object({
 });
 
 export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const bookingsCollection = collection(db, 'users', input.userId, 'bookings');
   try {
     const validatedInput = BookingSchema.parse(input);
@@ -41,7 +42,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
     console.error("getUserBookings called with no userId");
     return [];
   }
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const bookingsCollection = collection(db, 'users', userId, 'bookings');
   try {
     const querySnapshot = await getDocs(bookingsCollection);
@@ -65,7 +66,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
 // NOTE: This function as-is would be insecure without proper admin checks.
 // In a real app, this should be protected by an admin-only role.
 export async function getAllBookings(): Promise<Booking[]> {
-    const db = getDb();
+    const db = getFirestore(getFirebaseAdminApp());
     // This is inefficient. A real app would query each user's booking subcollection.
     // For this demo, we assume a simplified (and less secure) 'bookings' root collection for admins.
     const rootBookingsCollection = collection(db, 'bookings'); 
@@ -86,7 +87,7 @@ export async function cancelBooking(userId: string, bookingId: string): Promise<
     if(!userId || !bookingId) {
         throw new Error("User ID and Booking ID are required to cancel.");
     }
-    const db = getDb();
+    const db = getFirestore(getFirebaseAdminApp());
     const bookingRef = doc(db, 'users', userId, 'bookings', bookingId);
     try {
         await updateDoc(bookingRef, {

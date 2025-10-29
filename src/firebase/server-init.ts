@@ -3,7 +3,6 @@
 // It should not be imported into any client-side code.
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from './config';
 
 // Attempt to load service account credentials from environment variable
@@ -16,7 +15,7 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
   }
 }
 
-const getFirebaseAdminApp = (): App => {
+export const getFirebaseAdminApp = (): App => {
     if (getApps().length > 0) {
         return getApps()[0];
     }
@@ -35,10 +34,4 @@ const getFirebaseAdminApp = (): App => {
     return initializeApp({
         projectId: firebaseConfig.projectId,
     });
-};
-
-export const getDb = (): Firestore => {
-  // Always get the Firestore instance from the initialized app.
-  // This avoids race conditions with module-level variables.
-  return getFirestore(getFirebaseAdminApp());
 };

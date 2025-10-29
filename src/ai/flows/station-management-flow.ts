@@ -25,7 +25,8 @@ import {
   getDoc,
   runTransaction,
 } from "firebase/firestore";
-import { getDb } from '@/firebase/server-init';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getFirebaseAdminApp } from '@/firebase/server-init';
 
 const initialStations: Omit<Station, "id">[] = [
   {
@@ -95,7 +96,7 @@ const initialStations: Omit<Station, "id">[] = [
 
 async function seedInitialStations(): Promise<void> {
     console.log("Attempting to seed initial stations...");
-    const db = getDb();
+    const db = getFirestore(getFirebaseAdminApp());
     try {
         await runTransaction(db, async (transaction) => {
             const metadataRef = doc(db, 'metadata', 'stations');
@@ -126,7 +127,7 @@ async function seedInitialStations(): Promise<void> {
 
 
 export async function getStations(): Promise<Station[]> {
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const stationsCol = collection(db, 'stations');
   const snapshot = await getDocs(stationsCol);
   
@@ -152,7 +153,7 @@ export async function getStations(): Promise<Station[]> {
 export async function createStation(
   stationData: Omit<Station, "id">
 ): Promise<{ id: string }> {
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const stationsCol = collection(db, 'stations');
   const validatedData = CreateStationSchema.parse(stationData);
   const docRef = await addDoc(stationsCol, validatedData);
@@ -163,7 +164,7 @@ export async function updateStation(
   stationId: string,
   stationData: Partial<Omit<Station, "id">>
 ): Promise<{ id: string }> {
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const stationRef = doc(db, "stations", stationId);
   const stationSnap = await getDoc(stationRef);
   if (!stationSnap.exists()) {
@@ -196,7 +197,7 @@ export async function deleteStation(
   if (!stationId) {
     throw new Error("Station ID is required");
   }
-  const db = getDb();
+  const db = getFirestore(getFirebaseAdminApp());
   const stationRef = doc(db, "stations", stationId);
   await deleteDoc(stationRef);
   return { id: stationId };
