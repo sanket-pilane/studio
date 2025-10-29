@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -27,16 +28,15 @@
         "name"
       ]
     },
-    "ChargingStation": {
+    "Station": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChargingStation",
+      "title": "Station",
       "type": "object",
       "description": "Represents a charging station.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the charging station.",
-          "format": "uuid"
+          "description": "Unique identifier for the charging station."
         },
         "name": {
           "type": "string",
@@ -46,21 +46,24 @@
           "type": "string",
           "description": "Address of the charging station."
         },
-        "latitude": {
-          "type": "number",
-          "description": "Latitude coordinate of the charging station."
-        },
-        "longitude": {
-          "type": "number",
-          "description": "Longitude coordinate of the charging station."
+        "coordinates": {
+            "type": "object",
+            "properties": {
+                "lat": {"type": "number"},
+                "lng": {"type": "number"}
+            },
+            "required": ["lat", "lng"]
         },
         "connectors": {
-          "type": "string",
-          "description": "Type of connectors available at the station."
-        },
-        "speed": {
-          "type": "string",
-          "description": "Charging speed of the station."
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {"type": "string"},
+                    "speed": {"type": "number"}
+                },
+                "required": ["type", "speed"]
+            }
         },
         "price": {
           "type": "number",
@@ -73,19 +76,21 @@
         "availableChargers": {
           "type": "number",
           "description": "Number of available chargers at the station."
+        },
+        "rating": {
+          "type": "number"
         }
       },
       "required": [
         "id",
         "name",
         "address",
-        "latitude",
-        "longitude",
+        "coordinates",
         "connectors",
-        "speed",
         "price",
         "totalChargers",
-        "availableChargers"
+        "availableChargers",
+        "rating"
       ]
     },
     "Booking": {
@@ -105,7 +110,7 @@
         },
         "stationId": {
           "type": "string",
-          "description": "Reference to ChargingStation. (Relationship: ChargingStation 1:N Booking)"
+          "description": "Reference to Station. (Relationship: Station 1:N Booking)"
         },
         "startTime": {
           "type": "string",
@@ -152,11 +157,11 @@
         }
       },
       {
-        "path": "/charging_stations/{stationId}",
+        "path": "/stations/{stationId}",
         "definition": {
-          "entityName": "ChargingStation",
+          "entityName": "Station",
           "schema": {
-            "$ref": "#/backend/entities/ChargingStation"
+            "$ref": "#/backend/entities/Station"
           },
           "description": "Stores charging station information. Open access for reading station details.",
           "params": [
@@ -183,22 +188,6 @@
             {
               "name": "bookingId",
               "description": "The unique identifier for the booking."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/operator_charging_stations/{stationId}",
-        "definition": {
-          "entityName": "ChargingStation",
-          "schema": {
-            "$ref": "#/backend/entities/ChargingStation"
-          },
-          "description": "Stores charging stations managed by operators. Managed via membership map with the operator UID as the key",
-          "params": [
-            {
-              "name": "stationId",
-              "description": "The unique identifier for the charging station."
             }
           ]
         }

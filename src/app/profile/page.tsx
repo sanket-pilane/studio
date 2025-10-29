@@ -37,9 +37,9 @@ export default function ProfilePage() {
   }, [user]);
   
   const handleCancelBooking = async (bookingId?: string) => {
-    if(!bookingId) return;
+    if(!bookingId || !user) return;
     try {
-        await cancelBooking(bookingId);
+        await cancelBooking(user.uid, bookingId);
         toast({
             title: "Booking Cancelled",
             description: "Your booking has been successfully cancelled.",

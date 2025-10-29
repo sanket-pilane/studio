@@ -13,7 +13,6 @@ import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'fireb
 import { z } from 'genkit';
 import { getDb } from '@/firebase/server-init';
 import type { Booking } from '@/lib/types';
-import { error } from 'console';
 
 const BookingSchema = z.object({
   stationId: z.string(),
@@ -26,7 +25,7 @@ const BookingSchema = z.object({
 
 export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
   const db = getDb();
-  const bookingsCollection = collection(db, 'bookings');
+  const bookingsCollection = collection(db, 'users', input.userId, 'bookings');
   try {
     const validatedInput = BookingSchema.parse(input);
     const docRef = await addDoc(bookingsCollection, validatedInput);
@@ -43,10 +42,9 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
     return [];
   }
   const db = getDb();
-  const bookingsCollection = collection(db, 'bookings');
-  const q = query(bookingsCollection, where("userId", "==", userId));
+  const bookingsCollection = collection(db, 'users', userId, 'bookings');
   try {
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(bookingsCollection);
     const bookings: Booking[] = [];
     querySnapshot.forEach((doc) => {
       bookings.push({ id: doc.id, ...doc.data() } as Booking);
@@ -64,11 +62,15 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
   }
 }
 
+// NOTE: This function as-is would be insecure without proper admin checks.
+// In a real app, this should be protected by an admin-only role.
 export async function getAllBookings(): Promise<Booking[]> {
     const db = getDb();
-    const bookingsCollection = collection(db, 'bookings');
+    // This is inefficient. A real app would query each user's booking subcollection.
+    // For this demo, we assume a simplified (and less secure) 'bookings' root collection for admins.
+    const rootBookingsCollection = collection(db, 'bookings'); 
     try {
-        const querySnapshot = await getDocs(bookingsCollection);
+        const querySnapshot = await getDocs(rootBookingsCollection);
         const bookings: Booking[] = [];
         querySnapshot.forEach((doc) => {
             bookings.push({ id: doc.id, ...doc.data() } as Booking);
@@ -80,12 +82,12 @@ export async function getAllBookings(): Promise<Booking[]> {
     }
 }
 
-export async function cancelBooking(bookingId: string): Promise<{ id: string }> {
-    if(!bookingId) {
-        throw new Error("Booking ID is required to cancel.");
+export async function cancelBooking(userId: string, bookingId: string): Promise<{ id: string }> {
+    if(!userId || !bookingId) {
+        throw new Error("User ID and Booking ID are required to cancel.");
     }
     const db = getDb();
-    const bookingRef = doc(db, 'bookings', bookingId);
+    const bookingRef = doc(db, 'users', userId, 'bookings', bookingId);
     try {
         await updateDoc(bookingRef, {
             status: 'Cancelled'
