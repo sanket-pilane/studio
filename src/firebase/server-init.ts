@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file is used for server-side (admin) initialization of Firebase.
 // It should not be imported into any client-side code.
 
@@ -36,13 +37,8 @@ const getFirebaseAdminApp = (): App => {
     });
 };
 
-// Store the db instance to avoid re-initializing it on every call.
-let db: Firestore | null = null;
-
 export const getDb = (): Firestore => {
-  // Initialize the db instance if it hasn't been already.
-  if (!db) {
-    db = getFirestore(getFirebaseAdminApp());
-  }
-  return db;
+  // Always get the Firestore instance from the initialized app.
+  // This avoids race conditions with module-level variables.
+  return getFirestore(getFirebaseAdminApp());
 };

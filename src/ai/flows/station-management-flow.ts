@@ -94,13 +94,13 @@ const initialStations: Omit<Station, "id">[] = [
 ];
 
 async function seedInitialStations(): Promise<void> {
-    const db = getDb();
     console.log("Attempting to seed initial stations...");
-    const metadataRef = doc(db, 'metadata', 'stations');
-    const stationsCol = collection(db, "stations");
-
     try {
-        await runTransaction(db, async (transaction) => {
+        await runTransaction(getDb(), async (transaction) => {
+            const db = getDb();
+            const metadataRef = doc(db, 'metadata', 'stations');
+            const stationsCol = collection(db, "stations");
+            
             const metadataDoc = await transaction.get(metadataRef);
 
             if (metadataDoc.exists() && metadataDoc.data().seeded) {
