@@ -1,0 +1,314 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user in the ChargeSpot Navigator application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "profilePicture": {
+          "type": "string",
+          "description": "URL of the user's profile picture.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName"
+      ]
+    },
+    "ChargingStation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChargingStation",
+      "type": "object",
+      "description": "Represents a charging station in the ChargeSpot Navigator application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChargingStation entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the charging station."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the charging station."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude coordinate of the charging station."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude coordinate of the charging station."
+        },
+        "connectors": {
+          "type": "array",
+          "description": "Array of connector types available at the station.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "speed": {
+          "type": "number",
+          "description": "Charging speed of the station (e.g., in kW)."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price per kWh at the charging station."
+        },
+        "totalChargers": {
+          "type": "number",
+          "description": "Total number of chargers at the station."
+        },
+        "availableChargers": {
+          "type": "number",
+          "description": "Number of currently available chargers at the station."
+        },
+        "operatorId": {
+          "type": "string",
+          "description": "Reference to Operator. (Relationship: Operator 1:N ChargingStation)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address",
+        "latitude",
+        "longitude",
+        "connectors",
+        "speed",
+        "price",
+        "totalChargers",
+        "availableChargers"
+      ]
+    },
+    "Booking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a booking for a charging station by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Booking entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Booking)"
+        },
+        "stationId": {
+          "type": "string",
+          "description": "Reference to ChargingStation. (Relationship: ChargingStation 1:N Booking)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Start time of the booking.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "End time of the booking.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the booking (e.g., 'active', 'cancelled', 'completed')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "stationId",
+        "startTime",
+        "endTime",
+        "status"
+      ]
+    },
+    "Operator": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Operator",
+      "type": "object",
+      "description": "Represents an operator who manages charging stations.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Operator entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the operator."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the operator.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email"
+      ]
+    },
+    "Vehicle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle",
+      "type": "object",
+      "description": "Represents a user's saved vehicle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Vehicle entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Vehicle)"
+        },
+        "make": {
+          "type": "string",
+          "description": "Make of the vehicle."
+        },
+        "model": {
+          "type": "string",
+          "description": "Model of the vehicle."
+        },
+        "year": {
+          "type": "number",
+          "description": "Year of the vehicle."
+        },
+        "connectorType": {
+          "type": "string",
+          "description": "Connector type required by the vehicle."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "make",
+        "model",
+        "year",
+        "connectorType"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Path-based ownership ensures only the user can access their own data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/vehicles/{vehicleId}",
+        "definition": {
+          "entityName": "Vehicle",
+          "schema": {
+            "$ref": "#/backend/entities/Vehicle"
+          },
+          "description": "Stores user's vehicles. Path-based ownership ensures only the user can access their own vehicles.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "vehicleId",
+              "description": "The unique identifier of the vehicle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bookings/{bookingId}",
+        "definition": {
+          "entityName": "Booking",
+          "schema": {
+            "$ref": "#/backend/entities/Booking"
+          },
+          "description": "Stores user's bookings. Path-based ownership ensures only the user can access their own bookings.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "bookingId",
+              "description": "The unique identifier of the booking."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chargingStations/{stationId}",
+        "definition": {
+          "entityName": "ChargingStation",
+          "schema": {
+            "$ref": "#/backend/entities/ChargingStation"
+          },
+          "description": "Stores charging station information. Includes `operatorId` for authorization independence.",
+          "params": [
+            {
+              "name": "stationId",
+              "description": "The unique identifier of the charging station."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/operators/{operatorId}",
+        "definition": {
+          "entityName": "Operator",
+          "schema": {
+            "$ref": "#/backend/entities/Operator"
+          },
+          "description": "Stores operator information. Enables operator-specific rules for managing stations.",
+          "params": [
+            {
+              "name": "operatorId",
+              "description": "The unique identifier of the operator."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the ChargeSpot Navigator application, emphasizing security, scalability, and ease of debugging. It adheres to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For example, the `ChargingStations` collection includes the `operatorId` field, enabling rules to directly verify station ownership without needing to perform `get()` operations to retrieve operator information. Similarly, the `Bookings` collection includes the `userId` and `stationId` allowing rules to be written to enforce user and station specific booking constraints without needing to perform additional reads. This structure ensures atomic operations for creating and modifying bookings. QAPs are achieved by structural segregation. User-specific data (vehicles and bookings) are placed under the `/users/{userId}` path, ensuring secure list operations based on user ownership. Station data is stored in a flat `/chargingStations` collection for efficient querying of nearby stations. Role-based access for operators is managed using the `/operators/{operatorId}` collection to ensure that they have the correct permissions to manage their charging stations. The membership map isn't required here as the operatorId field in the ChargingStations collection can be used to effectively control access."
+  }
+}
