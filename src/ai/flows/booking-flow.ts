@@ -11,7 +11,7 @@
 
 import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'genkit';
-import { db } from '@/firebase/server-init';
+import { getDb } from '@/firebase/server-init';
 import type { Booking } from '@/lib/types';
 import { error } from 'console';
 
@@ -25,6 +25,7 @@ const BookingSchema = z.object({
 });
 
 export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
+  const db = getDb();
   const bookingsCollection = collection(db, 'bookings');
   try {
     const validatedInput = BookingSchema.parse(input);
@@ -41,6 +42,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
     console.error("getUserBookings called with no userId");
     return [];
   }
+  const db = getDb();
   const bookingsCollection = collection(db, 'bookings');
   const q = query(bookingsCollection, where("userId", "==", userId));
   try {
@@ -63,6 +65,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
+    const db = getDb();
     const bookingsCollection = collection(db, 'bookings');
     try {
         const querySnapshot = await getDocs(bookingsCollection);
@@ -81,6 +84,7 @@ export async function cancelBooking(bookingId: string): Promise<{ id: string }> 
     if(!bookingId) {
         throw new Error("Booking ID is required to cancel.");
     }
+    const db = getDb();
     const bookingRef = doc(db, 'bookings', bookingId);
     try {
         await updateDoc(bookingRef, {

@@ -2,7 +2,7 @@
 // It should not be imported into any client-side code.
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { firebaseConfig } from './config';
 
 // Attempt to load service account credentials from environment variable
@@ -36,8 +36,11 @@ const getFirebaseAdminApp = (): App => {
     });
 };
 
+let db: Firestore | null = null;
 
-const adminApp = getFirebaseAdminApp();
-const db = getFirestore(adminApp);
-
-export { adminApp, db };
+export const getDb = (): Firestore => {
+  if (!db) {
+    db = getFirestore(getFirebaseAdminApp());
+  }
+  return db;
+};
