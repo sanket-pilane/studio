@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
-import { Zap, Star, DollarSign } from 'lucide-react';
+import { Zap, Star, IndianRupee } from 'lucide-react';
 import type { Station } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
@@ -40,8 +40,8 @@ export default function CustomMarker({ station, onClick }: CustomMarkerProps) {
                   <span className="font-semibold">{station.rating}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">${station.price}/kWh</span>
+                  <IndianRupee className="h-4 w-4 text-primary" />
+                  <span className="font-semibold">₹{station.price}/kWh</span>
                 </div>
               </div>
                {/* Arrow pointing down to the marker */}
@@ -65,4 +65,3 @@ export default function CustomMarker({ station, onClick }: CustomMarkerProps) {
     </AdvancedMarker>
   );
 }
-

@@ -1,8 +1,9 @@
+
 'use client';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MoreHorizontal, PlusCircle, Loader2, Zap, Users, DollarSign, Trash2, Edit, CheckCircle2, XCircle, MapPin } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Loader2, Zap, Users, IndianRupee, Trash2, Edit, CheckCircle2, XCircle, MapPin } from "lucide-react"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -182,7 +183,7 @@ export default function DashboardPage() {
                                                 {station.availableChargers} / {station.totalChargers}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">${station.price.toFixed(2)}/kWh</TableCell>
+                                        <TableCell className="hidden md:table-cell">₹{station.price.toFixed(2)}/kWh</TableCell>
                                         <TableCell className="hidden sm:table-cell">{station.rating.toFixed(1)}/5.0</TableCell>
                                         <TableCell>
                                             <DropdownMenu>

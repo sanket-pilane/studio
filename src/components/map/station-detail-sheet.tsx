@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { Station } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import { Star, Zap, Plug, DollarSign, MapPin, Navigation, Loader2 } from 'lucide-react';
+import { Star, Zap, Plug, IndianRupee, MapPin, Navigation, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/auth-context';
 import { useState } from 'react';
@@ -129,10 +129,10 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
                           </div>
                       </div>
                        <div className="flex items-start gap-2">
-                          <DollarSign className="h-4 w-4 mt-0.5 text-primary"/>
+                          <IndianRupee className="h-4 w-4 mt-0.5 text-primary"/>
                           <div>
                               <p className="text-muted-foreground">Price</p>
-                              <p className="font-semibold">${station.price} / kWh</p>
+                              <p className="font-semibold">₹{station.price} / kWh</p>
                           </div>
                       </div>
                   </div>
