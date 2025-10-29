@@ -13,6 +13,7 @@ import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'fireb
 import { z } from 'genkit';
 import { db } from '@/firebase/server-init';
 import type { Booking } from '@/lib/types';
+import { error } from 'console';
 
 const BookingSchema = z.object({
   stationId: z.string(),
@@ -23,35 +24,70 @@ const BookingSchema = z.object({
   status: z.enum(['Confirmed', 'Completed', 'Cancelled']),
 });
 
-export async function createBooking(input: Booking): Promise<{ id: string }> {
-  const validatedInput = BookingSchema.parse(input);
-  const docRef = await addDoc(collection(db, 'bookings'), validatedInput);
-  return { id: docRef.id };
+const bookingsCollection = collection(db, 'bookings');
+
+export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
+  try {
+    const validatedInput = BookingSchema.parse(input);
+    const docRef = await addDoc(bookingsCollection, validatedInput);
+    return { id: docRef.id };
+  } catch (e) {
+    console.error("Error creating booking: ", e);
+    throw new Error("Failed to create booking.");
+  }
 }
 
 export async function getUserBookings(userId: string): Promise<Booking[]> {
-  const q = query(collection(db, "bookings"), where("userId", "==", userId));
-  const querySnapshot = await getDocs(q);
-  const bookings: Booking[] = [];
-  querySnapshot.forEach((doc) => {
-    bookings.push({ id: doc.id, ...doc.data() } as Booking);
-  });
-  return bookings.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+  if (!userId) {
+    console.error("getUserBookings called with no userId");
+    return [];
+  }
+  const q = query(bookingsCollection, where("userId", "==", userId));
+  try {
+    const querySnapshot = await getDocs(q);
+    const bookings: Booking[] = [];
+    querySnapshot.forEach((doc) => {
+      bookings.push({ id: doc.id, ...doc.data() } as Booking);
+    });
+    // Sort by date and time, most recent first
+    return bookings.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB.getTime() - dateA.getTime();
+    });
+  } catch(e) {
+    console.error("Error getting user bookings: ", e);
+    // In a real app, you'd want more robust error handling, maybe return an error object
+    return [];
+  }
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
-    const querySnapshot = await getDocs(collection(db, "bookings"));
-    const bookings: Booking[] = [];
-    querySnapshot.forEach((doc) => {
-        bookings.push({ id: doc.id, ...doc.data() } as Booking);
-    });
-    return bookings;
+    try {
+        const querySnapshot = await getDocs(bookingsCollection);
+        const bookings: Booking[] = [];
+        querySnapshot.forEach((doc) => {
+            bookings.push({ id: doc.id, ...doc.data() } as Booking);
+        });
+        return bookings;
+    } catch(e) {
+        console.error("Error getting all bookings: ", e);
+        return [];
+    }
 }
 
 export async function cancelBooking(bookingId: string): Promise<{ id: string }> {
+    if(!bookingId) {
+        throw new Error("Booking ID is required to cancel.");
+    }
     const bookingRef = doc(db, 'bookings', bookingId);
-    await updateDoc(bookingRef, {
-        status: 'Cancelled'
-    });
-    return { id: bookingId };
+    try {
+        await updateDoc(bookingRef, {
+            status: 'Cancelled'
+        });
+        return { id: bookingId };
+    } catch(e) {
+        console.error("Error cancelling booking: ", e);
+        throw new Error("Failed to cancel booking.");
+    }
 }

@@ -41,20 +41,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const userDocRef = doc(db, 'users', firebaseUser.uid);
-    const userDoc = await getDoc(userDocRef);
-    if (userDoc.exists()) {
-        setUserProfile(userDoc.data() as UserProfile);
-    } else {
-        const defaultProfile = { 
-            fullName: firebaseUser.displayName || firebaseUser.email!.split('@')[0], 
-            vehicle: '' 
-        };
-        try {
+    try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            setUserProfile(userDoc.data() as UserProfile);
+        } else {
+            // This might happen if the user record is created in Auth but the Firestore doc creation fails.
+            console.log("User profile doesn't exist, creating one.");
+            const defaultProfile = { 
+                fullName: firebaseUser.displayName || firebaseUser.email!.split('@')[0], 
+                vehicle: '' 
+            };
             await setDoc(userDocRef, defaultProfile);
             setUserProfile(defaultProfile);
-        } catch (error) {
-            console.error("Error creating user profile:", error);
         }
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
     }
   }, []);
 
@@ -66,13 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
+      setUser(user);
       if (user) {
-        setUser(user);
         await fetchUserProfile(user, firestore);
         const token = await user.getIdTokenResult();
-        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
+        // Check for admin claim OR the hardcoded admin email
+        const adminStatus = !!token.claims.admin || user.email === 'admin@example.com';
+        setIsAdmin(adminStatus);
       } else {
-        setUser(null);
         setUserProfile(null);
         setIsAdmin(false);
       }
@@ -84,20 +87,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
+    // onAuthStateChanged will handle the rest
   };
 
   const signup = async (email: string, pass: string, fullName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const user = userCredential.user;
+    // Create user profile document in Firestore
     await setDoc(doc(firestore, 'users', user.uid), {
         fullName: fullName,
         vehicle: ''
     });
+    // Manually trigger profile fetch since onAuthStateChanged might not have the profile yet
     await fetchUserProfile(user, firestore);
   };
 
   const logout = async () => {
     await signOut(auth);
+    // Clear local state immediately
+    setUser(null);
+    setUserProfile(null);
+    setIsAdmin(false);
     router.push('/login');
   };
 
@@ -105,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
         await setDoc(userDocRef, data, { merge: true });
-        await fetchUserProfile(user, firestore);
+        await fetchUserProfile(user, firestore); // Re-fetch to update state
     }
   };
 

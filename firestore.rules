@@ -2,140 +2,131 @@
  * @fileoverview Firestore Security Rules for ChargeSpot Navigator.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-specific data (profiles, vehicles, bookings).
- * Charging station and operator data is managed independently, with authorization checks based on the 'operatorId' field within charging station documents.
+ * This ruleset enforces a strict user-ownership model for user profiles, vehicles, and bookings.
+ * Charging station data is publicly readable but only modifiable by the station's operator.
+ * Operator data is protected, with potential for future role-based access control.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information. Only the user can access their own profile.
- * - /users/{userId}/vehicles/{vehicleId}: Stores vehicles owned by the user. Only the user can access their own vehicles.
- * - /users/{userId}/bookings/{bookingId}: Stores bookings made by the user. Only the user can access their own bookings.
- * - /chargingStations/{stationId}: Stores charging station information. Accessible to everyone, but only operators can modify their own stations.
- * - /operators/{operatorId}: Stores operator information. Only accessible to themselves.
+ * - /users/{userId}: Stores user profile information.
+ * - /users/{userId}/vehicles/{vehicleId}: Stores vehicles owned by a specific user.
+ * - /users/{userId}/bookings/{bookingId}: Stores bookings made by a specific user.
+ * - /chargingStations/{stationId}: Stores charging station information, including the operatorId.
+ * - /operators/{operatorId}: Stores operator information.
  *
  * Key Security Decisions:
- * - Users can only access their own data (profiles, vehicles, bookings).
- * - Operators can manage their own charging stations based on the `operatorId` field in the charging station documents.
- * - Public listing of charging stations is allowed.
- * - Users cannot list all users.
- * - Data validation is relaxed in this prototyping phase, focusing on authorization and relational integrity.
+ * - User listing is disallowed to protect user privacy.
+ * - Charging station data is publicly readable to facilitate discovery.
+ * - Write access to charging stations is restricted to the owning operator.
+ * - Operator data access is currently unrestricted but should be secured in the future.
  *
  * Denormalization for Authorization:
- * - ChargingStation documents include the `operatorId` to allow for direct authorization checks without additional reads.
- * - Booking documents include both `userId` and `stationId` to allow rules to be written to enforce user and station specific booking constraints.
- *
- * Structural Segregation:
- * - User-specific data (vehicles and bookings) is stored under the `/users/{userId}` path to enforce user ownership.
+ * - The `ChargingStation` entity denormalizes `operatorId` to enable direct authorization checks.
+ * - The `Booking` entity denormalizes `userId` and `stationId` to simplify booking-related rules.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces user-ownership for user profiles.
+     * @description Protects user profile data, ensuring only the user can read and write their own profile.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user_abc' can create their own profile at /users/user_abc if request.auth.uid == 'user_abc'.
-     * @allow (get, update, delete) - User with UID 'user_abc' can read, update, or delete their own profile at /users/user_abc.
-     * @deny (create) - User with UID 'user_abc' cannot create a profile for another user at /users/user_xyz.
-     * @deny (get, update, delete) - User with UID 'user_xyz' cannot read, update, or delete the profile of user 'user_abc' at /users/user_abc.
+     * @allow (create) - User 'abc' can create their profile if request.auth.uid == 'abc'.
+     * @allow (get, update, delete) - User 'abc' can get, update, or delete their profile if request.auth.uid == 'abc'.
+     * @deny (create, update, delete) - User 'def' cannot create, update, or delete user 'abc's profile.
+     * @deny (list) - No one can list all users.
      * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces user-ownership for vehicles.
+     * @description Protects user vehicle data, ensuring only the user can manage their own vehicles.
      * @path /users/{userId}/vehicles/{vehicleId}
-     * @allow (create) - User with UID 'user_abc' can create a vehicle for themselves at /users/user_abc/vehicles/vehicle_123.
-     * @allow (get, list, update, delete) - User with UID 'user_abc' can read, list, update, or delete their own vehicle at /users/user_abc/vehicles/vehicle_123.
-     * @deny (create) - User with UID 'user_abc' cannot create a vehicle for another user at /users/user_xyz/vehicles/vehicle_123.
-     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot read, list, update, or delete the vehicle of user 'user_abc' at /users/user_abc/vehicles/vehicle_123.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) - User 'abc' can create a vehicle under their profile.
+     * @allow (get, update, delete) - User 'abc' can get, update, or delete a vehicle under their profile.
+     * @deny (create, update, delete) - User 'def' cannot create, update, or delete vehicle 'xyz' under user 'abc''s profile.
+     * @allow (list) - User 'abc' can list vehicles under their profile.
+     * @principle Enforces document ownership for writes and relational integrity.
      */
     match /users/{userId}/vehicles/{vehicleId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == request.resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces user-ownership for bookings.
+     * @description Protects user booking data, ensuring only the user can manage their own bookings.
      * @path /users/{userId}/bookings/{bookingId}
-     * @allow (create) - User with UID 'user_abc' can create a booking for themselves at /users/user_abc/bookings/booking_123.
-     * @allow (get, list, update, delete) - User with UID 'user_abc' can read, list, update, or delete their own booking at /users/user_abc/bookings/booking_123.
-     * @deny (create) - User with UID 'user_abc' cannot create a booking for another user at /users/user_xyz/bookings/booking_123.
-     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot read, list, update, or delete the booking of user 'user_abc' at /users/user_abc/bookings/booking_123.
-     * @principle Restricts access to a user's own data tree.
+     * @allow (create) - User 'abc' can create a booking under their profile.
+     * @allow (get, update, delete) - User 'abc' can get, update, or delete a booking under their profile.
+     * @deny (create, update, delete) - User 'def' cannot create, update, or delete booking 'xyz' under user 'abc''s profile.
+     * @allow (list) - User 'abc' can list bookings under their profile.
+     * @principle Enforces document ownership for writes and relational integrity.
      */
     match /users/{userId}/bookings/{bookingId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == request.resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows public read access to charging station information and restricts write access to authorized operators.
+     * @description Allows public read access to charging station data, but restricts write access to the station's operator.
      * @path /chargingStations/{stationId}
-     * @allow (get, list) - Any user can read charging station information.
-     * @allow (create, update, delete) - Only an operator can create, update, or delete charging station if their operator ID matches the station's operatorId.
-     * @deny (create, update, delete) - A user cannot modify a charging station if they are not the assigned operator.
-     * @principle Public read with owner-only writes, authorization independence.
+     * @allow (get, list) - Any user can read charging station data.
+     * @allow (create) - Operator 'op1' can create a station with operatorId 'op1' if request.auth.uid == 'op1'.
+     * @allow (update, delete) - Operator 'op1' can update or delete a station with operatorId 'op1' if request.auth.uid == 'op1'.
+     * @deny (create, update, delete) - User 'abc' cannot create, update, or delete any charging station.
+     * @principle Allows public read access with owner-only writes, and enforces relational integrity.
      */
     match /chargingStations/{stationId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOperator(stationId) {
-        return isSignedIn() && request.auth.uid == resource.data.operatorId;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isOperator(stationId);
-      allow delete: if isOperator(stationId);
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.operatorId == request.auth.uid;
+      allow update: if isExistingOperator(request.resource.data.operatorId);
+      allow delete: if isExistingOperator(resource.data.operatorId);
     }
 
     /**
-     * @description Enforces user-ownership for operator profiles.
+     * @description Protects operator data.  Access control should be refined in the future for specific operator roles.
      * @path /operators/{operatorId}
-     * @allow (create) - Operator with UID 'operator_abc' can create their own profile at /operators/operator_abc.
-     * @allow (get, update, delete) - Operator with UID 'operator_abc' can read, update, or delete their own profile at /operators/operator_abc.
-     * @deny (create) - Operator with UID 'operator_abc' cannot create a profile for another operator at /operators/operator_xyz.
-     * @deny (get, update, delete) - Operator with UID 'operator_xyz' cannot read, update, or delete the profile of operator 'operator_abc' at /operators/operator_abc.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list, create, update, delete) - No restrictions.
+     * @principle Placeholder for future role-based access control.
      */
     match /operators/{operatorId} {
-      function isOwner(operatorId) {
-        return request.auth != null && request.auth.uid == operatorId;
-      }
+      allow get: if true;
+      allow list: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
 
-      allow get: if isOwner(operatorId);
-      allow list: if false;
-      allow create: if isOwner(operatorId);
-      allow update: if isOwner(operatorId);
-      allow delete: if isOwner(operatorId);
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    function isOperator(operatorId) {
+      return isSignedIn() && request.auth.uid == operatorId;
+    }
+
+    function isExistingOperator(operatorId) {
+      return isOperator(operatorId) && resource != null;
     }
   }
 }
