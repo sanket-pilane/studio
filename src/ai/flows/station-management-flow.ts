@@ -15,16 +15,6 @@ import {
   CreateStationSchema,
 } from "@/lib/zod-schemas";
 import type { Station } from "@/lib/types";
-import {
-  collection,
-  getDocs,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDoc,
-  runTransaction,
-} from "firebase/firestore";
 import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/firebase/server-init';
 
@@ -98,20 +88,20 @@ async function seedInitialStations(): Promise<void> {
     console.log("Attempting to seed initial stations...");
     const db = getFirestore(getFirebaseAdminApp());
     try {
-        await runTransaction(db, async (transaction) => {
-            const metadataRef = doc(db, 'metadata', 'stations');
-            const stationsCol = collection(db, "stations");
+        await db.runTransaction(async (transaction) => {
+            const metadataRef = db.collection('metadata').doc('stations');
+            const stationsCol = db.collection("stations");
             
             const metadataDoc = await transaction.get(metadataRef);
 
-            if (metadataDoc.exists() && metadataDoc.data().seeded) {
+            if (metadataDoc.exists && metadataDoc.data()?.seeded) {
                 console.log("Stations already seeded. Skipping.");
                 return;
             }
 
             console.log("Seeding initial stations into Firestore...");
             for (const stationData of initialStations) {
-                const docRef = doc(stationsCol); // Auto-generate ID
+                const docRef = stationsCol.doc(); // Auto-generate ID
                 transaction.set(docRef, stationData);
             }
 
@@ -121,21 +111,18 @@ async function seedInitialStations(): Promise<void> {
         });
     } catch (error) {
         console.error("Error during seeding transaction: ", error);
-        // If the transaction fails, it will automatically roll back.
     }
 }
 
 
 export async function getStations(): Promise<Station[]> {
   const db = getFirestore(getFirebaseAdminApp());
-  const stationsCol = collection(db, 'stations');
-  const snapshot = await getDocs(stationsCol);
+  const stationsCol = db.collection('stations');
+  const snapshot = await stationsCol.get();
   
   if (snapshot.empty) {
-    // If the database is empty, seed it with initial data
     await seedInitialStations();
-    // Fetch again after seeding
-    const afterSeedSnapshot = await getDocs(stationsCol);
+    const afterSeedSnapshot = await stationsCol.get();
     const stations: Station[] = [];
     afterSeedSnapshot.forEach((doc) => {
       stations.push({ id: doc.id, ...doc.data() } as Station);
@@ -154,9 +141,9 @@ export async function createStation(
   stationData: Omit<Station, "id">
 ): Promise<{ id: string }> {
   const db = getFirestore(getFirebaseAdminApp());
-  const stationsCol = collection(db, 'stations');
+  const stationsCol = db.collection('stations');
   const validatedData = CreateStationSchema.parse(stationData);
-  const docRef = await addDoc(stationsCol, validatedData);
+  const docRef = await stationsCol.add(validatedData);
   return { id: docRef.id };
 }
 
@@ -165,29 +152,26 @@ export async function updateStation(
   stationData: Partial<Omit<Station, "id">>
 ): Promise<{ id: string }> {
   const db = getFirestore(getFirebaseAdminApp());
-  const stationRef = doc(db, "stations", stationId);
-  const stationSnap = await getDoc(stationRef);
-  if (!stationSnap.exists()) {
+  const stationRef = db.collection("stations").doc(stationId);
+  const stationSnap = await stationRef.get();
+  if (!stationSnap.exists) {
     throw new Error("Station not found");
   }
   const existingStation = stationSnap.data();
 
-  // Create a temporary object for validation that includes all required fields
   const dataToValidate = {
     ...existingStation,
     ...stationData,
-    id: stationId, // Add id to satisfy the full schema before parsing
+    id: stationId, 
   };
 
-  // Validate full object
   RefinedStationSchema.parse(dataToValidate);
 
-  // Validate only the fields being updated
   const finalUpdateData = StationSchema.omit({ id: true })
     .partial()
     .parse(stationData);
 
-  await updateDoc(stationRef, finalUpdateData);
+  await stationRef.update(finalUpdateData);
   return { id: stationId };
 }
 
@@ -198,7 +182,7 @@ export async function deleteStation(
     throw new Error("Station ID is required");
   }
   const db = getFirestore(getFirebaseAdminApp());
-  const stationRef = doc(db, "stations", stationId);
-  await deleteDoc(stationRef);
+  const stationRef = db.collection("stations").doc(stationId);
+  await stationRef.delete();
   return { id: stationId };
 }
