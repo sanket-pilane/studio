@@ -24,9 +24,8 @@ const BookingSchema = z.object({
   status: z.enum(['Confirmed', 'Completed', 'Cancelled']),
 });
 
-const bookingsCollection = collection(db, 'bookings');
-
 export async function createBooking(input: Omit<Booking, 'id'>): Promise<{ id: string }> {
+  const bookingsCollection = collection(db, 'bookings');
   try {
     const validatedInput = BookingSchema.parse(input);
     const docRef = await addDoc(bookingsCollection, validatedInput);
@@ -42,6 +41,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
     console.error("getUserBookings called with no userId");
     return [];
   }
+  const bookingsCollection = collection(db, 'bookings');
   const q = query(bookingsCollection, where("userId", "==", userId));
   try {
     const querySnapshot = await getDocs(q);
@@ -63,6 +63,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
 }
 
 export async function getAllBookings(): Promise<Booking[]> {
+    const bookingsCollection = collection(db, 'bookings');
     try {
         const querySnapshot = await getDocs(bookingsCollection);
         const bookings: Booking[] = [];
