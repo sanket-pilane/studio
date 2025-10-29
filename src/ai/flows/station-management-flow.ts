@@ -98,6 +98,7 @@ const initialStations: Omit<Station, "id">[] = [
 async function seedInitialStations(): Promise<void> {
     console.log("Attempting to seed initial stations...");
     const metadataRef = doc(db, 'metadata', 'stations');
+    const stationsCol = collection(db, "stations");
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -110,7 +111,7 @@ async function seedInitialStations(): Promise<void> {
 
             console.log("Seeding initial stations into Firestore...");
             for (const stationData of initialStations) {
-                const docRef = doc(stationsCollection); // Auto-generate ID
+                const docRef = doc(stationsCol); // Auto-generate ID
                 transaction.set(docRef, stationData);
             }
 
@@ -126,12 +127,13 @@ async function seedInitialStations(): Promise<void> {
 
 
 export async function getStations(): Promise<Station[]> {
-  const snapshot = await getDocs(stationsCollection);
+  const stationsCol = collection(db, 'stations');
+  const snapshot = await getDocs(stationsCol);
   if (snapshot.empty) {
     // If the database is empty, seed it with initial data
     await seedInitialStations();
     // Fetch again after seeding
-    const afterSeedSnapshot = await getDocs(stationsCollection);
+    const afterSeedSnapshot = await getDocs(stationsCol);
     const stations: Station[] = [];
     afterSeedSnapshot.forEach((doc) => {
       stations.push({ id: doc.id, ...doc.data() } as Station);
@@ -149,8 +151,9 @@ export async function getStations(): Promise<Station[]> {
 export async function createStation(
   stationData: Omit<Station, "id">
 ): Promise<{ id: string }> {
+  const stationsCol = collection(db, 'stations');
   const validatedData = CreateStationSchema.parse(stationData);
-  const docRef = await addDoc(stationsCollection, validatedData);
+  const docRef = await addDoc(stationsCol, validatedData);
   return { id: docRef.id };
 }
 
