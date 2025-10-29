@@ -9,12 +9,10 @@
  * - cancelBooking: Cancels a specific booking.
  */
 
-import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { z } from 'genkit';
-import { app } from '@/lib/firebase';
+import { db } from '@/firebase/server-init';
 import type { Booking } from '@/lib/types';
-
-const db = getFirestore(app);
 
 const BookingSchema = z.object({
   stationId: z.string(),

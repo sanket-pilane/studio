@@ -16,20 +16,17 @@ import {
 } from "@/lib/zod-schemas";
 import type { Station } from "@/lib/types";
 import {
-  getFirestore,
   collection,
   getDocs,
   doc,
   addDoc,
   updateDoc,
   deleteDoc,
-  writeBatch,
   getDoc,
   runTransaction,
 } from "firebase/firestore";
-import { app } from "@/lib/firebase";
+import { db } from '@/firebase/server-init';
 
-const db = getFirestore(app);
 const stationsCollection = collection(db, "stations");
 
 const initialStations: Omit<Station, "id">[] = [

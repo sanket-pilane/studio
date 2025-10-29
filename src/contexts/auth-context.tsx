@@ -4,8 +4,8 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, User, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth, db, initializationPromise } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Firestore } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfile {
@@ -28,13 +28,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { auth, firestore, isUserLoading } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchUserProfile = useCallback(async (firebaseUser: User | null) => {
+  const fetchUserProfile = useCallback(async (firebaseUser: User | null, db: Firestore) => {
     if (!firebaseUser) {
         setUserProfile(null);
         return;
@@ -58,27 +59,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      await initializationPromise; // Wait for Firebase to be ready
-      const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        setLoading(true);
-        if (user) {
-          setUser(user);
-          await fetchUserProfile(user);
-          const token = await user.getIdTokenResult();
-          setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
-        } else {
-          setUser(null);
-          setUserProfile(null);
-          setIsAdmin(false);
-        }
-        setLoading(false);
-      });
-      return () => unsubscribe();
+    if (isUserLoading) {
+      setLoading(true);
+      return;
     };
+    
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
+      if (user) {
+        setUser(user);
+        await fetchUserProfile(user, firestore);
+        const token = await user.getIdTokenResult();
+        setIsAdmin(!!token.claims.admin || user.email === 'admin@example.com');
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setIsAdmin(false);
+      }
+      setLoading(false);
+    });
 
-    initializeAuth();
-  }, [fetchUserProfile]);
+    return () => unsubscribe();
+  }, [auth, firestore, isUserLoading, fetchUserProfile]);
 
   const login = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
@@ -87,11 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, pass: string, fullName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const user = userCredential.user;
-    await setDoc(doc(db, 'users', user.uid), {
+    await setDoc(doc(firestore, 'users', user.uid), {
         fullName: fullName,
         vehicle: ''
     });
-    await fetchUserProfile(user);
+    await fetchUserProfile(user, firestore);
   };
 
   const logout = async () => {
@@ -101,9 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
+        const userDocRef = doc(firestore, 'users', user.uid);
         await setDoc(userDocRef, data, { merge: true });
-        await fetchUserProfile(user);
+        await fetchUserProfile(user, firestore);
     }
   };
 
@@ -111,17 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user, 
       userProfile, 
       isAdmin, 
-      loading, 
+      loading: isUserLoading || loading, 
       login, 
       signup, 
       logout, 
-      fetchUserProfile: () => fetchUserProfile(user), 
+      fetchUserProfile: () => fetchUserProfile(user, firestore), 
       updateUserProfile 
     };
 
   return (
     <AuthContext.Provider value={value}>
-        {loading ? (
+        {(isUserLoading || loading) ? (
              <div className="flex items-center justify-center h-screen">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
