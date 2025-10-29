@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import type { Station } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { Star, Zap, Plug, DollarSign, MapPin, Navigation, Loader2 } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/auth-context';
 import { useState } from 'react';
@@ -29,7 +28,6 @@ type StationDetailSheetProps = {
 };
 
 export default function StationDetailSheet({ station, onOpenChange }: StationDetailSheetProps) {
-    const stationImage = PlaceHolderImages[0];
     const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
@@ -108,14 +106,14 @@ export default function StationDetailSheet({ station, onOpenChange }: StationDet
                 </div>
               </SheetHeader>
               <div className="p-6 pt-0">
-                  {stationImage && (
+                  {station.imageUrl && (
                       <div className="aspect-video rounded-md overflow-hidden relative mb-4">
                           <Image
-                              src={stationImage.imageUrl}
-                              alt={stationImage.description}
+                              src={station.imageUrl}
+                              alt={station.name}
                               fill
                               style={{objectFit: 'cover'}}
-                              data-ai-hint={stationImage.imageHint}
+                              data-ai-hint="charging station"
                           />
                       </div>
                   )}

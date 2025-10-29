@@ -3,8 +3,32 @@
     {
       "id": "station-image-1",
       "description": "A modern EV charging station at night.",
-      "imageUrl": "https://images.unsplash.com/photo-1707758283398-7df21adba23a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjaGFyZ2luZyUyMHN0YXRpb258ZW58MHx8fHwxNzU5MTM5NzE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1698631190173-bdd81ec451b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y2hhcmdpbmclMjBzdGF0aW9uJTIwbmlnaHR8ZW58MHx8fHwxNzYxNzUxNzcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "charging station night"
+    },
+    {
+      "id": "station-image-2",
+      "description": "An EV charging in a sunlit parking lot.",
+      "imageUrl": "https://images.unsplash.com/photo-1671782584185-1300064c5289?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZXYlMjBjaGFyZ2luZ3xlbnwwfHx8fDE3NjE3NTE3NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ev charging"
+    },
+    {
+      "id": "station-image-3",
+      "description": "Close-up of a charging connector plugged into a car.",
+      "imageUrl": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaGFyZ2luZyUyMGNhcnxlbnwwfHx8fDE3NjE3NTE3NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "charging car"
+    },
+    {
+      "id": "station-image-4",
+      "description": "A row of available EV chargers.",
+      "imageUrl": "https://images.unsplash.com/photo-1641659376402-3d2f48a91ed7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjaGFyZ2luZyUyMHN0YXRpb258ZW58MHx8fHwxNzYxNzE1ODk5fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "charging station"
+    },
+    {
+      "id": "station-image-5",
+      "description": "A person charging their electric vehicle.",
+      "imageUrl": "https://images.unsplash.com/photo-1552350331-e695bc1ec10d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBjaGFyZ2luZ3xlbnwwfHx8fDE3NjE3NTE3NzF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person charging"
     }
   ]
 }

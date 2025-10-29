@@ -17,6 +17,7 @@ import {
 import type { Station } from "@/lib/types";
 import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/firebase/server-init';
+import { PlaceHolderImages } from "@/lib/placeholder-images";
 
 const initialStations: Omit<Station, "id">[] = [
   {
@@ -124,15 +125,15 @@ export async function getStations(): Promise<Station[]> {
     await seedInitialStations();
     const afterSeedSnapshot = await stationsCol.get();
     const stations: Station[] = [];
-    afterSeedSnapshot.forEach((doc) => {
-      stations.push({ id: doc.id, ...doc.data() } as Station);
+    afterSeedSnapshot.forEach((doc, index) => {
+      stations.push({ id: doc.id, ...doc.data(), imageUrl: PlaceHolderImages[index % PlaceHolderImages.length].imageUrl } as Station);
     });
     return stations;
   }
 
   const stations: Station[] = [];
-  snapshot.forEach((doc) => {
-    stations.push({ id: doc.id, ...doc.data() } as Station);
+  snapshot.forEach((doc, index) => {
+    stations.push({ id: doc.id, ...doc.data(), imageUrl: PlaceHolderImages[index % PlaceHolderImages.length].imageUrl } as Station);
   });
   return stations;
 }
